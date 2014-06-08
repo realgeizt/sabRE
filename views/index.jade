@@ -1,0 +1,157 @@
+extends base
+block content
+  .row(ng-hide="appbusy")
+    .small-12.columns.large-centered
+      .row
+        .small-12.columns
+          .row(sytle='border-width: 1px; border-style: solid;')
+            .small-10.columns(style='width: 250px;')
+              h1(style='float: left;')= title
+              i(style='float: right; color: #ba0000;').fa.fa-flash.fa-4x
+            .small-2.columns
+              img(src='/img/logo.jpg', style='float: right;')
+          hr(style='margin: 0px 0px 20px 0px;')
+
+      .panel(ng-hide='fileapi')
+        h5 Your browser is too old, this will not work...
+
+      form(name='form1', ng-submit='login(username, password)', novalidate)
+        .row(ng-hide='auth.ok')
+          .small-4.columns.push-4
+            a.small.expand.alert.button(ng-show='auth.err', ng-click='auth.err=false') Invalid login
+            .small.expand.success.button(style='background-color: #f9a400; cursor: default;', ng-show='auth.loggingin')
+              img(src='/img/spinner_small.gif')
+              span(style='padding-left: 8px;') Please wait...
+            .row
+              .small-12.columns
+                span Username:
+                input(type='text', placeholder='Username', ng-model='username')
+            .row
+              .small-12.columns
+                span Password:
+                input(type='password', placeholder='Password', ng-model='password')
+            .row
+              .small-12.columns
+                button(type='submit', ng-disabled='!username || !password').postfix Login
+
+      .row(ng-show='auth.ok')
+        .small-12.columns
+          .row(ng-show='!sabdata.running')
+            .small-12.columns
+              i.fa.fa-exclamation-circle(style='color: #c30012;')
+              span(ng-show='sabdata.status' style='padding-left: 8px;') {{sabdata.status}}
+              span(ng-show='!sabdata.status' style='padding-left: 8px;') sabRE is not running
+          .row(ng-show='sabdata.running')
+            .small-4.columns.text-left
+              i.fa.fa-check-circle(ng-show='sabdata.statusint == 0' style='color: #078f00;')
+              i.fa.fa-exclamation-circle(ng-show='sabdata.statusint == 1' style='color: #c30012;')
+              span(style='padding-left: 8px;') {{sabdata.status}}
+            .small-4.columns.text-center Speed: {{sabdata.queue.speed}}
+            .small-4.columns.text-right Free space: {{sabdata.queue.diskspace1}} GB
+          br
+          hr(style='margin: 0px 0px 0px 0px;')
+
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          h3 Add NZB
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          a.small.expand.alert.button(ng-show='sendstate.err', ng-click='sendstate.err=false') Could not send data
+          a.small.expand.success.button(ng-show='sendstate.success', ng-click='sendstate.success=false') Data sent
+          .small.expand.success.button(style='background-color: #f9a400; cursor: default;', ng-show='sendstate.sending')
+            img(src='/img/spinner_small.gif')
+            span(style='padding-left: 8px;') Sending, please wait...
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          .row
+            .small-6.columns
+              inputfile(ng-model='file', style='margin:5px;')
+            .small-3.columns
+              a.small.expand.button(ng-disabled='!file || sendstate.sending || !sabdata.running', ng-click='sendNZB()') Add NZB
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          .row
+            .small-6.columns
+              input(type='text', placeholder='Link to NZB file', ng-model='nzburl')
+            .small-3.columns
+              a.small.expand.button(ng-disabled='!nzburl || sendstate.sending || !sabdata.running', ng-click='sendNZBUrl()') Add NZB link
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          .row
+            .small-6.columns
+              input(type='text', placeholder='Password', ng-model='nzbpass')
+            .small-3.columns
+              a.small.expand.button(ng-disabled='!nzbpass || sendstate.sending || !sabdata.running', ng-click='sendNZBPass()') Add password
+          hr(style='margin: 0px 0px 0px 0px;')
+
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          h3 Queue
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          table(style='width: 100%; table-layout: fixed;')
+            tr
+              th(style='width: 5%') Status
+              th(style='width: 50%;') Name
+              th(style='width: 10%;') Size
+              th(style='width: 10%') Left
+              th(style='width: 10%;') Progress
+              th(style='width: 15%;') Time left
+            tr(ng-repeat="slot in sabdata.queue.slots")
+              td
+                i(ng-show='slot.status == "Downloading" || slot.status == "Fetching"' style='color: #078f00').fa.fa-download
+                i(ng-show='slot.status == "Queued"').fa.fa-bars
+                i(ng-show='slot.status == "Paused"').fa.fa-pause
+              td
+                div(title='{{slot.filename}}', style='width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;') {{slot.filename}}
+              td.text-right {{slot.size}}
+              td.text-right
+                div(ng-hide='slot.sizeleft == "0 B"') {{slot.sizeleft}}
+              td(style='padding-top: 18px;')
+                div(class="progress [small-# large-#] [secondary alert success] [radius round]", style="width: 100%; float: left; background-color: #a4a4a4;")
+                  span(class="meter" style="width: {{slot.percentage}}%; background-color: #f9a400")
+              td.text-right
+                div(ng-hide='slot.timeleft == "0:00:00"') {{slot.timeleft}}
+          hr(style='margin: 0px 0px 0px 0px;')
+
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          h3 Finished downloads
+      .row(ng-show='auth.ok && sabdata.running')
+        .small-12.columns
+          table(style='width: 100%; table-layout: fixed;')
+            tr
+              th(style='width: 15%') Status
+              th(style='width: 10%') Progress
+              th(style='width: 65%') Name
+              th(style='width: 10%') Size
+            tr(ng-repeat="slot in sabdata.history.slots")
+              td
+                div(title='{{slot.fail_message}}' style='text-overflow: ellipsis; overflow: hidden; white-space: nowrap;')
+                  i(ng-show='slot.status == "Completed"' style='color: #078f00').fa.fa-check
+                  i(ng-show='slot.status == "Failed"' style='color: #c30012').fa.fa-minus-circle
+                  img(src='/img/spinner_small.gif', ng-show='slot.status != "Completed" && slot.status != "Failed"')
+                  span(ng-show='slot.status == "Queued"' style='padding-left: 8px;') Waiting...
+                  span(ng-show='slot.status == "Working"' style='padding-left: 8px;') Working...
+                  span(ng-show='slot.status == "Verifying"' style='padding-left: 8px;') Checking...
+                  span(ng-show='slot.status == "Repairing"' style='padding-left: 8px;') Repairing...
+                  span(ng-show='slot.status == "Extracting"' style='padding-left: 8px;') Extracting...
+                  span(ng-show='slot.status == "Building"' style='padding-left: 8px;') Building archive...
+                  span(ng-show='slot.status == "Failed"' style='padding-left: 8px; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;') {{slot.fail_message}}
+              td(style='padding-top: 18px;')
+                div(ng-show='slot.actionpercent > -1' class="progress [small-# large-#] [secondary alert success] [radius round]", style="width: 100%; float: left; background-color: #a4a4a4;")
+                  span(class="meter" style="width: {{slot.actionpercent}}%; background-color: #f9a400")
+              td
+                div(title='{{slot.name}}', style='width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;')
+                  a(ng-show='slot.status == "Completed"', ng-href='/downloads/{{slot.name}}.tar', target='_blank') {{slot.name}}
+                  span(ng-show='!(slot.status == "Completed")') {{slot.name}}
+                div(title='{{slot.filelist_str}}' ng-show='slot.status == "Completed"' style='font-size: 9px; line-height: 10px;') {{slot.filelist_short_str}}
+              td.text-right(ng-show='!(slot.size == "0.0 BYTES")') {{slot.size}}
+
+      .row
+        .small-12.columns.text-center
+          hr(style='margin: 0px 0px 10px 0px;')
+          div(style='font-size: 10px;') coded by&nbsp;
+            a(ng-href='https://github.com/realgeizt/', target='_blank') realgeizt
+            | /
+            a(ng-href='https://github.com/plakativa/', target='_blank') plakativa

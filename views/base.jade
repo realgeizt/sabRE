@@ -1,0 +1,21 @@
+doctype html
+html(lang='de-de', ng-app='webapp')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width')
+    base(href='/')
+    title= title
+    link(rel='shortcut icon', href='/img/favicon.png')
+    link(rel='stylesheet', href='/css/app.css')
+    link(rel='stylesheet', href='/foundation-essentials-5.2.2/css/normalize.css')
+    link(rel='stylesheet', href='/foundation-essentials-5.2.2/css/foundation.css')
+    link(rel='stylesheet', href='/css/font-awesome.min.css')
+
+    include includes/scripts
+    script(src='/js/app/app.js')
+
+  body(ng-controller='UICtrl')
+    div(id="overlay", ng-show="appbusy")
+    div(id="spinner", ng-show="appbusy")
+      | Lade...
+    block content
