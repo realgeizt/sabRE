@@ -17,7 +17,7 @@ Installation and start
 * Modify the file "data/users.json".
 * Set SABnzbd postprocessing script directory to "sabnzbd/scripts" or copy everything from "sabnzbd/scripts" to your usual postprocessing directory.
 When copying files to another folder make sure that the pathes in "settings.py" are still correct.
-* If you want to use an exetrnal source for authentication adjust the file "cs_settings/settings.coffee" at the key remoteAuth.
+* If you want to use an external source for authentication adjust the file "cs_settings/settings.coffee" at the key remoteAuth.
 Usename and password get posted to the defined URL using the variables "username" and "password".
 When authentication is successful the remote script should return "ok".
 * Run the application by executing run.sh (and hope that everything works...)
