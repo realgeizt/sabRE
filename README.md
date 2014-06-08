@@ -6,7 +6,7 @@ sabRE is a frontend to control SABnzbd, it enables you to share access to your i
 * sabRE provides an overview about what is happening in SABnzbd (queue/history)
 * It is coded in CoffeeScript and is run by node.js
 * The frontend is built using AngularJS
-Downloaded files will be put into a tar archive and the original download will be deleted afterwards. Users can then download the tar archive.
+* Downloaded files will be put into a tar archive and the original download will be deleted afterwards. Users can then download the tar archive.
 
 Installation and start
 ======================
