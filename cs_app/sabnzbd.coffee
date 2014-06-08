@@ -93,19 +93,19 @@ class SABnzbd
                 done = parseInt s.action_line.split(' ')[1].split('/')[0]
                 max = parseInt s.action_line.split(' ')[1].split('/')[1]
                 s.actionpercent = parseInt (parseFloat(done) / max) * 100
-              catch
+              catch e
                 s.actionpercent = -1
             if s.status == 'Repairing'
               try
                 s.actionpercent = parseInt s.action_line.split(' ')[1].split('%')[0]
-              catch
+              catch e
                 s.actionpercent = 0
             if s.status == 'Extracting'
               done = parseInt s.action_line.split(' ')[1].split('/')[0]
               max = parseInt s.action_line.split(' ')[1].split('/')[1]
               try
                 s.actionpercent = parseInt (parseFloat(done) / max) * 100
-              catch
+              catch e
                 s.actionpercent = 0
             if s.status == 'Running'
               data = fs.readFileSync(settings.postProcessProgressFile).toString().split('|')
