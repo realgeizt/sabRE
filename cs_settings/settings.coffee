@@ -29,7 +29,7 @@ settings =
     path: '/remoteauth/'
   # entries starting with strings from this list will be hidden from the queue
   sabHideQueue:
-    ['Versuche NZB-Datei', ]
+    ['Trying to fetch', ]
 }
 
 module.exports = settings
