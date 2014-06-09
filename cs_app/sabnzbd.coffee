@@ -45,12 +45,14 @@ class SABnzbd
           try
             cb null, JSON.parse(d).queue
           catch e
+            console.log e
             cb 'err', ''
       (cb) ->
         SABnzbd.getSabData 'history', (d) ->
           try
             cb null, JSON.parse(d).history
           catch e
+            console.log e
             cb 'err', ''
     ]
     async.parallel funcs, (e, r) ->
