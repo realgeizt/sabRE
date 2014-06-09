@@ -42,15 +42,15 @@ class SABnzbd
     funcs = [
       (cb) ->
         SABnzbd.getSabData 'queue', (d) ->
-          if _.isString(d) and d isnt ''
+          try
             cb null, JSON.parse(d).queue
-          else
-            cb 'err', '',
+          catch e
+            cb 'err', ''
       (cb) ->
         SABnzbd.getSabData 'history', (d) ->
-          if _.isString(d) and d isnt ''
+          try
             cb null, JSON.parse(d).history
-          else
+          catch e
             cb 'err', ''
     ]
     async.parallel funcs, (e, r) ->
