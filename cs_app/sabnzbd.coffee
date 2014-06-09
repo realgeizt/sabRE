@@ -42,13 +42,13 @@ class SABnzbd
     funcs = [
       (cb) ->
         SABnzbd.getSabData 'queue', (d) ->
-          if d != ''
+          if _.isString(d) and d isnt ''
             cb null, JSON.parse(d).queue
           else
             cb 'err', '',
       (cb) ->
         SABnzbd.getSabData 'history', (d) ->
-          if d != ''
+          if _.isString(d) and d isnt ''
             cb null, JSON.parse(d).history
           else
             cb 'err', ''
