@@ -15,8 +15,13 @@ logger = require './logger'
 functions = require './functions'
 
 class SABnzbd
+  @addUserNZB = (username, nzbname) ->
+    userNZBs = functions.getUserNZBs()
+    userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime()}
+    functions.writeUserNZBs(userNZBs)
   @getNZBName = (name) ->
     nzbname = path.basename name
+    nzbname = nzbname.replace(/[\/:*?"<>| ]/g, '_');
     if nzbname.length > 70
       nzbname = nzbname.substring 0, 70
     if nzbname.toLowerCase().endsWith('.nzb')
@@ -56,6 +61,7 @@ class SABnzbd
             cb 'err', ''
     ]
     async.parallel funcs, (e, r) ->
+      userNZBs = functions.getUserNZBs()
       # set general data
       if r[0]? and r[1]? and r[0] != '' and r[1] != ''
         s = 'SABnzbd is running'
@@ -76,14 +82,22 @@ class SABnzbd
         else
           r[0].speed = r[0].kbpersec + ' KB/s'
 
-        # hide specific slots by name
         if r[0].slots?
+          # hide specific slots by name
           r[0].slots = _.filter r[0].slots, (s) -> !(_.find settings.sabHideQueue, (q) -> s.filename.substring(0, q.length) == q)
+          # append responsible username to slot if needed
+          if settings.hideOtherUsersData
+            _.each r[0].slots, (s) ->
+              s.user = _.find(userNZBs, (u) -> u.nzb is s.filename).user if _.find(userNZBs, (u) -> u.nzb is s.filename)?
 
       if r[1]? and r[1].slots?
         # only allow one item per name
         r[1].slots = _.uniq r[1].slots, (item) ->
           return item.name
+        # append responsible username to slot if needed
+        if settings.hideOtherUsersData
+          _.each r[1].slots, (s) ->
+            s.user = _.find(userNZBs, (u) -> u.nzb is s.name).user if _.find(userNZBs, (u) -> u.nzb is s.name)?
 
         # iterate every slot and adjust it's data so it is useful to the client
         r[1].slots = _.filter r[1].slots, (s) -> s.status != 'Completed' || (s.status == 'Completed' && fs.existsSync(settings.downloadDir + s.name + '.tar'))
@@ -143,18 +157,6 @@ class SABnzbd
           else if s.status == 'Failed'
             s.size = null
 
-        # don't send everything to the client, only needed stuff
-        if r[0]?
-          r[0] = _.omit r[0], _.keys(_.omit r[0], 'slots', 'speed', 'diskspace1')
-          if r[0].slots?
-            r[0].slots = _.map r[0].slots, (ss) ->
-              return _.omit ss, _.keys(_.omit ss, 'status', 'filename', 'percentage', 'timeleft', 'size', 'sizeleft')
-        if r[1]?
-          r[1] = _.omit r[1], _.keys(_.omit r[1], 'slots')
-          if r[1].slots?
-            r[1].slots = _.map r[1].slots, (ss) ->
-              return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist_str', 'filelist_short_str', 'fail_message', 'name', 'actionpercent', 'extendedstatus')
-
       cb {running: run, queue: r[0], history: r[1], status: s, statusint: s2}
   @queueNZBFile = (filename, cb) ->
     nzbname = @getNZBName filename
@@ -165,11 +167,12 @@ class SABnzbd
         str += data
       response.on 'end', () ->
         if str.trim() == 'ok'
-          cb true
+
+          cb nzbname, true
         else
-          cb false
+          cb nzbname, false
     sabReq.on 'error', (err) ->
-      cb false
+      cb '', false
     sabReq.end()
   @queueNZBUrl = (url, cb) ->
     realQueueNZBLink = (url, cb) ->
@@ -186,17 +189,17 @@ class SABnzbd
           str += data
         response.on 'end', () ->
           if str.trim() == 'ok'
-            cb true
+            cb nzbname, true
           else
-            cb false
+            cb '', false
       sabReq.on 'error', (err) ->
-        cb false
+        cb '', false
       sabReq.end()
 
     if settings.useCurl
       exec 'curl -k ' + url, {maxBuffer: 1024 * 1024 * 30}, (err, stdout, stderr) ->
         if err || stdout.trim() == ''
-          return cb false
+          return cb '', false
         realQueueNZBLink url, cb
     else
       realQueueNZBLink url, cb

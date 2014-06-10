@@ -49,9 +49,10 @@ app.post '/nzb', auth.authUser, (req, res) ->
   filename = path.join(settings.nzbUploadDir + path.basename(req.body.nzbname))
   fs.writeFileSync filename, req.body.nzbdata
 
-  sabnzbd.queueNZBFile filename, (queueRes) ->
+  sabnzbd.queueNZBFile filename, (nzbName, queueRes) ->
     fs.unlink filename
     if queueRes
+      sabnzbd.addUserNZB req.user, nzbName
       res.json nzb: true
     else
       res.send 500
@@ -60,8 +61,9 @@ app.post '/nzb', auth.authUser, (req, res) ->
 app.post '/nzburl', auth.authUser, (req, res) ->
   logger.info 'user "' + req.user + '" queued URL "' + req.body.nzburl + '"'
 
-  sabnzbd.queueNZBUrl req.body.nzburl, (queueRes) ->
+  sabnzbd.queueNZBUrl req.body.nzburl, (nzbName, queueRes) ->
     if queueRes
+      sabnzbd.addUserNZB req.user, nzbName
       res.json nzb: true
     else
       res.send 500
@@ -84,7 +86,27 @@ app.post '/nzbpass', auth.authUser, (req, res) ->
 
 # route to get current sabnzbd data
 app.post '/sabdata', auth.authUser, (req, res) ->
-  res.json sabData
+  data = functions.clone sabData
+
+  if data? and data.queue? and data.history?
+    # if a user should only see data he enqueued, remove other data here
+    if settings.hideOtherUsersData
+      if data.queue.slots
+        data.queue.slots = _.filter data.queue.slots, (s) -> s.user == req.user
+      if data.history.slots
+        data.history.slots = _.filter data.history.slots, (s) -> s.user == req.user
+
+    # don't send everything to the client, only needed stuff
+    data.queue = _.omit data.queue, _.keys(_.omit data.queue, 'slots', 'speed', 'diskspace1')
+    if data.queue.slots?
+      data.queue.slots = _.map data.queue.slots, (ss) ->
+        return _.omit ss, _.keys(_.omit ss, 'status', 'filename', 'percentage', 'timeleft', 'size', 'sizeleft', 'user')
+    data.history = _.omit data.history, _.keys(_.omit data.history, 'slots')
+    if data.history.slots?
+      data.history.slots = _.map data.history.slots, (ss) ->
+        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist_str', 'filelist_short_str', 'fail_message', 'name', 'actionpercent', 'extendedstatus')
+
+  res.json data
 
 # route to download a file
 app.get '/downloads/:filename', auth.authUser, (req, res) ->
@@ -100,6 +122,12 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
   else
     res.send 404
 
+# TODO: before starting the server, check settings and when check fails abort startup
+
+# start the server
+app.listen app.get('port')
+logger.info 'server listening on port ' + app.get('port')
+
 # load current data from sabnzb every second
 loadDataInterval = () ->
   setTimeout () ->
@@ -109,12 +137,9 @@ loadDataInterval = () ->
   , 1000
 loadDataInterval()
 
-# cleanup passes and tarcontents
+# cleanup passes, tarcontents and usernzbs
 setInterval () ->
   functions.writePasses _.filter(functions.getPasses(), (p) -> p.time > new Date().getTime() - 604800000)
   functions.writeTarContents _.filter(functions.getTarContents(), (c) -> fs.existsSync(settings.downloadDir + c.filename))
+  functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
 , 86400
-
-# start the server
-app.listen app.get('port')
-logger.info 'server listening on port ' + app.get('port')

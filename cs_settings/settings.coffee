@@ -16,6 +16,10 @@ settings =
   postProcessPasswordsFile: __dirname + '/../data/passes.json'
   # path to file with created tar contents
   tarContentsFile: __dirname + '/../data/tarcontents.json'
+  # path to file containing user -> nzb mapping
+  userNZBsFile: __dirname + '/../data/usernzbs.json'
+  # hide queued nzbs/downloads from users that are not responsible for them
+  hideOtherUsersData: false
   # information to connect to sabnzbd
   sabData:
     host: '127.0.0.1'
