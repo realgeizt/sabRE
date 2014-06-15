@@ -4,8 +4,8 @@ sabRE is a frontend to control SABnzbd, it enables you to share access to your i
 * Users can enqueue NZB files or URLs containing a NZB file
 * Users can supply passwords for extraction of RAR archives
 * sabRE provides an overview about what is happening in SABnzbd (queue/history)
-* It is configurable whether users can see only their own enqueued downloads or all downloads which makes user management for SABnzbd possible
-* Downloaded files will be put into a tar archive and the original download will be deleted afterwards. Users can then download the tar archive.
+* It is configurable whether users can see only their own enqueued downloads or all downloads which makes some kind of user management for SABnzbd possible
+* Downloaded files will be put into a tar archive and can then be downloaded by logged in users
 * sabRE is coded in CoffeeScript and is run by node.js, the frontend is built using AngularJS
 
 To get the full sabRE experience you need to follow every step mentioned in the "Installation" paragraph.
@@ -35,4 +35,4 @@ If everything went okay, sabRE is configured and running now, but you still need
 
 * If you do not use other postprocessing scripts just configure SABnzbd to use sabRE's postprocessing script directory sabnzbd/scripts. You can do so by using the option "Folders"->"Post-Processing Scripts Folder" in the SABnzbd setup.
 * If you use other postprocessing scripts you need to put these scripts together with sabRE's scripts into one directory so SABnzbd can use them all. This means you have to copy sabRE's scripts to another directory or copy other scripts to sabRE's script directory (sabnzbd/scripts). Copying other scripts into sabRE's script directory should be no problem, but when you move sabRE's scripts to another directory you have to make sure that the variables PASSWORDS_FILE and TAR_CONTENTS_FILE in settings.py point to the same files as configured in settings.json which is used by sabRE itself, also make sure to copy all .py files, not only postprocess.py.  
-When TAR_CONTENTS_FILE in settings.py is incorrect sabRE won't display contents of .tar archives containing downloaded files created by the postprocessor, when PASSWORDS_FILE is incorrect sabRE's postprocessor won't be able to unrar password-protected archives.
+When TAR_CONTENTS_FILE in settings.py is incorrect sabRE won't display contents of tar archives containing downloaded files created by the postprocessor, when PASSWORDS_FILE is incorrect sabRE's postprocessor won't be able to unrar password-protected archives.
