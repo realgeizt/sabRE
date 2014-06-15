@@ -158,13 +158,12 @@ class SABnzbd
   @queueNZBFile = (filename, cb) ->
     nzbname = @getNZBName filename
 
-    sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey}, (response) ->
+    sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: encodeURI('/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey)}, (response) ->
       str = ''
       response.on 'data', (data) ->
         str += data
       response.on 'end', () ->
         if str.trim() == 'ok'
-
           cb nzbname, true
         else
           cb nzbname, false

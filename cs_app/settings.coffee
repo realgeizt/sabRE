@@ -127,7 +127,7 @@ class Settings
   # imports some settings from sabnzbd.ini
   @loadFromSABnzbd = ->
     for field in @configSchema
-      if field.inisec? and field.ininame?
+      if field.inisec? and field.ininame? and @sabConfigData[field.inisec]? and @sabConfigData[field.inisec][field.ininame]?
         convertedValue = @convertField @sabConfigData[field.inisec][field.ininame], field
         if @validateField convertedValue, field
           @[field.name] = convertedValue
