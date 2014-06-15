@@ -129,6 +129,9 @@ class Settings
     for field in @configSchema
       if field.inisec? and field.ininame? and @sabConfigData[field.inisec]? and @sabConfigData[field.inisec][field.ininame]?
         convertedValue = @convertField @sabConfigData[field.inisec][field.ininame], field
+        # if it is a path, adjust it
+        if field.type is 'file' or field.type is 'dir'
+          convertedValue = path.resolve (process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE) + '/.sabnzbd/', convertedValue
         if @validateField convertedValue, field
           @[field.name] = convertedValue
           field.loadedFromSABnzbd = true
