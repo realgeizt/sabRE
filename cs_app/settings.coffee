@@ -137,45 +137,32 @@ class Settings
   @adjustText = (desc, indent) ->
     return if not desc? or desc.length is 0
 
+    lineLimit = 80
+    desc = desc.trim()
     lines = []
 
-    getSpaces = (d) ->
-      return _.chain(d)
-      .map((c, i) -> if c is ' ' then return i else return -1)
-      .without(-1)
-      .value()
-
-    while not (desc.trim().length is 0)
-      spaces = getSpaces desc
-
+    while not (desc.length is 0)
+      # determine max length for the next line
       if lines.length is 0
-        maxChars = 80
+        maxChars = lineLimit
       else
-        if not indent? then maxChars = 80 else maxChars = 80 - indent
+        if not indent? then maxChars = lineLimit else maxChars = lineLimit - indent
 
-      p =
-        pos: _.find(spaces, (s) -> s > maxChars)
-        spaceIdx: _.indexOf(spaces, _.find(spaces, (s) -> s > maxChars)) - 1
-        prevPos: spaces[_.indexOf(spaces, _.find(spaces, (s) -> s > maxChars)) - 1]
-
-      if p.prevPos is 0
-        p.prevPos = p.pos
-
-      if not p.pos?
-        if lines.length > 0
-          lines.push _.lpad('', indent, ' ') + desc.trim() if not (desc.trim().length is 0)
-        else
-          lines.push desc.trim() if not (desc.trim().length is 0)
+      # break if appropriate
+      if desc.length < maxChars
+        lines.push _.lpad('', lineLimit - maxChars ,' ') + desc.trim()
         break
 
-      if (lines.length > 0) and (p.prevPos isnt p.pos)
-        lines.push _.lpad('', indent, ' ') + desc[0..p.prevPos - 1].trim()
-      else
-        lines.push desc[0..p.prevPos - 1].trim()
+      # get the last whitespace where we can truncate
+      l = _.chain(desc)
+           .map((c, i) -> if c is ' ' then return i else return null)
+           .without(null)
+           .filter((i) -> i < maxChars)
+           .last()
+           .value()
 
-      desc = desc[p.prevPos..]
-      spaces.splice 0, p.spaceIdx
-
+      lines.push _.lpad('', lineLimit - maxChars ,' ') + desc[0..l]
+      desc = desc[l..]
     return lines.join '\n'
   # takes user input for the value for a field
   @askSetting = (field, cb) ->
