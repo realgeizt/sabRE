@@ -142,8 +142,8 @@ class Settings
 
     getSpaces = (d) ->
       return _.chain(d)
-      .map (c, i) -> if c is ' ' then return i else return null
-      .without null
+      .map((c, i) -> if c is ' ' then return i else return -1)
+      .without(-1)
       .value()
 
     while not (desc.trim().length is 0)
