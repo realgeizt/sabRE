@@ -4,39 +4,35 @@ sabRE is a frontend to control SABnzbd, it enables you to share access to your i
 * Users can enqueue NZB files or URLs containing a NZB file
 * Users can supply passwords for extraction of RAR archives
 * sabRE provides an overview about what is happening in SABnzbd (queue/history)
-* It is coded in CoffeeScript and is run by node.js
-* The frontend is built using AngularJS
+* It is configurable whether users can see only their own enqueued downloads or all downloads which makes user management for SABnzbd possible
 * Downloaded files will be put into a tar archive and the original download will be deleted afterwards. Users can then download the tar archive.
+* sabRE is coded in CoffeeScript and is run by node.js, the frontend is built using AngularJS
 
-Installation and start
-======================
-* You need a working node.js installation, I prefer installing from sources. Get it at http://nodejs.org/.
-* Go to the directory where you checked out the project to and run "npm install" which installs all dependencies.
-* Modify the file "cs_settings/settings.coffee" according to your needs.
-* Modify the file "sabnzbd/scripts/settings.py", some values have to match with the values configured in "cs_settings/settings.coffee".
-* Modify the file "data/users.json".
-* Set SABnzbd postprocessing script directory to "sabnzbd/scripts" or copy everything from "sabnzbd/scripts" to your usual postprocessing directory.
-When copying files to another folder make sure that the pathes in "settings.py" are still correct.
-* If you want to use an external source for authentication adjust the file "cs_settings/settings.coffee" at the key remoteAuth.
-Usename and password get posted to the defined URL using the variables "username" and "password".
-When authentication is successful the remote script should return "ok".
-* Run the application by executing run.sh (and hope that everything works...)
-* Navigate your browser to "http://HOST_IP:3000/"
-* To make it possible for users to download files you need to have sabRE setup behind an apache instance using mod_proxy with enabled mod_xsendfile module.
-When a user downloads a file sabRE will check if the user is logged in and let apache send the file using mod_xsendfile. Here is an example apache host configuration:
-```xml
-<Directory /sabre_downloads>
-        Require all granted
-</Directory>
-<VirtualHost *:80>
-        XSendFile on
-        ServerName sabre.host.com
-        ProxyRequests off
-        <Proxy *>
-                Order deny,allow
-                Allow from all
-        </Proxy>
-        ProxyPass / http://localhost:3000/
-        ProxyPassReverse / http://localhost:3000/
-        XSendFilePath /sabre_downloads
-</VirtualHost>
+To get the full sabRE experience you need to follow every step mentioned in the "Installation" paragraph.
+
+Installation
+------------
+* You need a working node.js installation, I prefer installing from sources (it's easy!). Get it at http://nodejs.org/, extract it, go into the extracted directory and run  
+```./configure && make && sudo make install```  
+If you are using Ubuntu and don't want to install from source, you need to run  
+```sudo apt-get install nodejs npm coffeescript```
+* Go to the folder where you want to have sabRE installed, to checkout to your home directory do  
+```cd ~```
+* To checkout sabRE run  
+```git clone https://github.com/realgeizt/sabRE.git```
+* Change directory to freshly checked out sabRE with  
+```cd sabRE```
+* Install needed dependencies by running  
+```npm install```
+* Make run.sh executable by executing  
+```chmod +x run.sh```
+* Before starting sabRE you might want to edit data/users.json to setup some users. There are two predefined user accounts, the first one is username "user1" with password "pass1". Every user defined there can login and enqueue/download files.
+* Launch sabRE with  
+```./run.sh ```  
+Now complete the setup wizard. After completion run sabRE again and it will startup using the previously configured settings. The URL of the webinterface is ```http://SABRE_SERVER_IP:3000/```.
+
+If everything went okay, sabRE is configured and running now, but you still need to configure postprocessing options in SABnzbd.
+
+* If you do not use other postprocessing scripts just configure SABnzbd to use sabRE's postprocessing script directory sabnzbd/scripts. You can do so by using the option "Folders"->"Post-Processing Scripts Folder" in the SABnzbd setup.
+* If you use other postprocessing scripts you need to put these scripts together with sabRE's scripts into one directory so SABnzbd can use them all. This means you have to copy sabRE's scripts to another directory or copy other scripts to sabRE's script directory (sabnzbd/scripts). Copying other scripts into sabRE's script directory should be no problem, but when you move sabRE's scripts to another directory you have to make sure that the variables PASSWORDS_FILE and TAR_CONTENTS_FILE in settings.py point to the same files as configured in settings.json which is used by sabRE itself, also make sure to copy all .py files, not only postprocess.py.  
+When TAR_CONTENTS_FILE in settings.py is incorrect sabRE won't display contents of .tar archives containing downloaded files created by the postprocessor, when PASSWORDS_FILE is incorrect sabRE's postprocessor won't be able to unrar password-protected archives.
