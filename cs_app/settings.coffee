@@ -2,7 +2,6 @@
 fs = require 'fs'
 path = require 'path'
 readline = require 'readline'
-pwuid = require 'pwuid'
 ini = require 'node-ini'
 async = require 'async'
 _ = require 'underscore'
@@ -13,7 +12,7 @@ class Settings
   @error = false
   @loadedKeys = []
   @filename = path.resolve(__dirname, '../data/settings.json')
-  @sabConfigFile = pwuid().dir + '/.sabnzbd/sabnzbd.ini'
+  @sabConfigFile = (process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE) + '/.sabnzbd/sabnzbd.ini'
   @sabConfigData = null
 
   # the template for the config file
@@ -61,6 +60,8 @@ class Settings
         # if it's a path modify it
         if s.type is 'file' or s.type is 'dir'
           val = path.resolve __dirname, val
+        if s.type is 'dir' and (not _.endsWith val, '/')
+          val += '/'
         if @validateField val, s
           @[s.name] = val
           @loadedKeys.push s.name

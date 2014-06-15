@@ -18,7 +18,7 @@ try
   sabnzbd = require './sabnzbd'
   functions = require './functions'
 catch e
-  console.log 'an error occured starting the application:\n' + e
+  console.log 'an error occured starting the application (did you forget "npm install"?):\n' + e
   process.exit(1)
 
 # initialize express
