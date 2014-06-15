@@ -142,7 +142,7 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
           range = _.map(_.filter(range.split('bytes=')[1].split('-'), (r) -> parseInt(r) and not _.isNaN(r)), (r) -> parseInt r)
           start = parseInt range[0] if range.length > 0
           end = parseInt range[1] if range.length > 1
-      catch
+      catch e
         return res.send 500
 
     res.writeHead 200, { 'Content-Length': end - start, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
