@@ -133,7 +133,7 @@ class Settings
           @[field.name] = convertedValue
           field.loadedFromSABnzbd = true
           console.log '  set "' + field.name + '" to "' + @[field.name] + '"'
-  # prettifies text... ugly, long and inefficient!
+  # prettifies text
   @adjustText = (desc, indent) ->
     return if not desc? or desc.length is 0
 
@@ -163,6 +163,7 @@ class Settings
 
       lines.push _.lpad('', lineLimit - maxChars ,' ') + desc[0..l]
       desc = desc[l..]
+
     return lines.join '\n'
   # takes user input for the value for a field
   @askSetting = (field, cb) ->
