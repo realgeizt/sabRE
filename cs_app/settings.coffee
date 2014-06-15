@@ -137,7 +137,6 @@ class Settings
   @adjustText = (desc, indent) ->
     return if not desc? or desc.length is 0
 
-    if not indent? then maxChars = 80 else maxChars = 80 - indent
     lines = []
 
     getSpaces = (d) ->
@@ -149,10 +148,15 @@ class Settings
     while not (desc.trim().length is 0)
       spaces = getSpaces desc
 
+      if lines.length is 0
+        maxChars = 80
+      else
+        if not indent? then maxChars = 80 else maxChars = 80 - indent
+
       p =
         pos: _.find(spaces, (s) -> s > maxChars)
         spaceIdx: _.indexOf(spaces, _.find(spaces, (s) -> s > maxChars)) - 1
-        prevPos: spaces[_.indexOf(spaces, _.find(spaces, (s) -> s > maxChars)) - 2]
+        prevPos: spaces[_.indexOf(spaces, _.find(spaces, (s) -> s > maxChars)) - 1]
 
       if p.prevPos is 0
         p.prevPos = p.pos
@@ -240,8 +244,8 @@ class Settings
         msg += '''
                it seems this is the first start of the application because no configuration
                file could be found. also it seems that SABnzbd is configured on this system,
-               which makes it possible to setup sabRE automatically because most things can
-               be read from sabnzbd.ini.
+               which makes it possible to setup sabRE automatically because most things can be
+               read from sabnzbd.ini.
 
                '''
       else
