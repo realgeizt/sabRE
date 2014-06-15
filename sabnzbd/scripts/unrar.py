@@ -108,18 +108,18 @@ class unrarer:
     def run(self, dir):
         self.rootdir = os.getcwd()
         try:
-            print 'getting files...'
+            print 'getting rar files...'
             files = sorted(self.getfiles(dir))
             
             if len(files) == 0:
-                print '  no files found'
+                print '  no rar files found, no unrar needed'
                 return
             
             print 'getting passes...'
             ppp = self.getpasses()
             
             if len(ppp) == 0:
-                print '  no passes found'
+                print '  no passes found, no unrar possible'
                 return
                 
             for f in files:

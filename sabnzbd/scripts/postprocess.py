@@ -58,13 +58,6 @@ class PostProcessor:
             subprocess.Popen(["chmod", "666", settings.PROGRESS_FILE, ])
         except Exception, e:
             print traceback.format_exc(e)
-    def unrar(self, dir):
-        try:
-            unrarer().run(download_final_dir)
-            return True
-        except Exception, e:
-            print traceback.format_exc(e)
-        return False
     def writecontents(self):
         try:
             json_data = open(settings.TAR_CONTENTS_FILE, 'r')
@@ -84,10 +77,12 @@ class PostProcessor:
           json.dump(data, outfile)
         subprocess.Popen(["chmod", "666", settings.TAR_CONTENTS_FILE, ])
     def run(self):
+        error = False
+        
         # get path to downloaded files
         downloadDir = sys.argv[1]
         if not os.path.exists(downloadDir):
-            print 'directory does not exist'
+            print 'directory "%s" does not exist' % downloadDir
             return 1
 
         # this should be the root directory where sabnzbd downloads go
@@ -98,12 +93,15 @@ class PostProcessor:
         
         print 'processing "%s" in directory "%s"' % (self.downloadFile, self.downloadDir)
         
+        print 'starting unrar'
+        
         # unrar everything
         self.writeprogress('rar', -1)
         try:
             unrarer().run(self.downloadDir + self.downloadFile)
         except Exception, e:
-            print traceback.format_exc(e)
+            print 'exception in unrar: ' + traceback.format_exc(e)
+            error = True
         
         # change directory
         os.chdir(self.downloadDir)
@@ -118,7 +116,12 @@ class PostProcessor:
         rndImgFile = self.randomword(10) + '.jpg'
 
         # write contents of soon created tar file to file read by sabRE
-        self.writecontents()
+        print 'modifying tar content file'
+        try:
+            self.writecontents()
+        except Exception, e:
+            print 'exception in writecontents(): ' + traceback.format_exc(e)
+            error = True
 
         try:
             shutil.copy(settings.TAR_INCLUDE_IMAGE, self.downloadDir + self.downloadFile + '/' + rndImgFile)
@@ -126,8 +129,10 @@ class PostProcessor:
             pass
 
         # tar all downloaded files
+        cmd = ["tar", "cvf", self.downloadFile + '.tar', "--totals=SIGUSR1", self.downloadFile]
+        print 'running tar: ' + str(cmd)
         self.writeprogress('tar', 0)
-        proc = subprocess.Popen(["tar", "cvf", self.downloadFile + '.tar', "--totals=SIGUSR1", self.downloadFile], stderr=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
 
         # start the thread that sends signals to tar
         thread = SignalSender() 
@@ -146,6 +151,8 @@ class PostProcessor:
             except Exception, e:
                 return 1
         proc.wait()
+        if proc.returncode != 0:
+            error = True
 
         # allow access to everybody...
         try:
@@ -160,12 +167,15 @@ class PostProcessor:
             pass
 
         # remove the files that are now in the tar archive
+        print 'deleting original download'
         proc2 = subprocess.Popen(['rm', '-rf', self.downloadDir + self.downloadFile], stdout=subprocess.PIPE)
         proc2.wait()
 
-        if proc.returncode != 0:
+        if error:
+            print 'completed with problems. check script output.'
             return 1
         else:
+            print 'completed successfully'
             return 0
 
 
