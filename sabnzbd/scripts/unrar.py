@@ -12,13 +12,16 @@ import settings
 class unrarer:
     # gets passes for rar files to extract
     def getpasses(self):
-        ret = []
-        json_data = open(settings.PASSWORDS_FILE, 'r')
-        data = json.load(json_data)
-        for p in data:
-            ret.append(p['pass'])
-        json_data.close()
-        return ret
+        try:
+            ret = []
+            json_data = open(settings.PASSWORDS_FILE, 'r')
+            data = json.load(json_data)
+            for p in data:
+                ret.append(p['pass'])
+            json_data.close()
+            return ret
+        except:
+            return []
     # gets percentage of extraction from rar output line
     def getpercent(self, line):
         fn = line

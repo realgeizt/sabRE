@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+﻿#!/usr/bin/python2.7
 
 import sys
 import os
@@ -47,7 +47,7 @@ class PostProcessor:
         res = []
         for dirpath, dirnames, filenames in os.walk(startpath):
             for f in filenames:
-                res.append(f)
+                res.append(f.decode('utf-8', 'ignore'))
         return res
     # writes unrar/tar progress to file that is read by sabRE
     def writeprogress(self, type, progress):
@@ -55,6 +55,7 @@ class PostProcessor:
             f = open(settings.PROGRESS_FILE, 'w')
             f.write(type.upper() + '|' + str(progress))
             f.close()
+            subprocess.Popen(["chmod", "666", settings.PROGRESS_FILE, ])
         except Exception, e:
             print traceback.format_exc(e)
     def unrar(self, dir):
@@ -78,12 +79,13 @@ class PostProcessor:
                 break
         if not exists:
             data.append({'filename': self.downloadFile + '.tar', 'files': self.getfiles(self.downloadDir + self.downloadFile)})
+
         with open(settings.TAR_CONTENTS_FILE, 'w') as outfile:
           json.dump(data, outfile)
+        subprocess.Popen(["chmod", "666", settings.TAR_CONTENTS_FILE, ])
     def run(self):
         # get path to downloaded files
         downloadDir = sys.argv[1]
-        
         if not os.path.exists(downloadDir):
             print 'directory does not exist'
             return 1
@@ -105,13 +107,13 @@ class PostProcessor:
         
         # change directory
         os.chdir(self.downloadDir)
-
+        
         # delete the tar file before creating it later
         try:
             os.remove(self.downloadFile + '.tar')
         except:
             pass
-
+        
         size = self.getsize(self.downloadDir + self.downloadFile)
         rndImgFile = self.randomword(10) + '.jpg'
 

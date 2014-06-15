@@ -1,18 +1,17 @@
-# configuration
-settings = require '../settings/settings'
-
 # dependencies
 path = require 'path'
 fs = require 'fs'
 http = require 'http'
 _ = require 'underscore'
 async = require 'async'
-if settings.useCurl
-  exec = require('child_process').exec
 
 # project dependencies
+settings = require './settings'
 logger = require './logger'
 functions = require './functions'
+
+if settings.useCurl
+  exec = require('child_process').exec
 
 class SABnzbd
   @addUserNZB = (username, nzbname) ->
@@ -24,17 +23,17 @@ class SABnzbd
     nzbname = nzbname.replace(/[\/:*?"<>| ]/g, '_');
     if nzbname.length > 70
       nzbname = nzbname.substring 0, 70
-    if nzbname.toLowerCase().endsWith('.nzb')
+    if _.endsWith nzbname.toLowerCase(), '.nzb'
       nzbname = nzbname.substring(0, nzbname.length - 4)
-    if nzbname.toLowerCase().endsWith('.par2')
+    if _.endsWith nzbname.toLowerCase(), '.par2'
       nzbname = nzbname.substring(0, nzbname.length - 5)
     return nzbname
   @getSabData = (type, cb) ->
     if type == 'queue'
-      p = '/api?mode=queue&start=0&limit=0&output=json&apikey=' + settings.sabData.apiKey
+      p = '/api?mode=queue&start=0&limit=0&output=json&apikey=' + settings.sabApiKey
     else
-      p = '/api?mode=history&start=0&limit=0&output=json&apikey=' + settings.sabData.apiKey
-    req = http.request {host: settings.sabData.host, port: settings.sabData.port, path: p}, (response) ->
+      p = '/api?mode=history&start=0&limit=0&output=json&apikey=' + settings.sabApiKey
+    req = http.request {host: settings.sabHost, port: settings.sabPort, path: p}, (response) ->
       str = ''
       response.on 'data', (chunk) ->
         str += chunk
@@ -50,14 +49,12 @@ class SABnzbd
           try
             cb null, JSON.parse(d).queue
           catch e
-            console.log e
             cb 'err', ''
       (cb) ->
         SABnzbd.getSabData 'history', (d) ->
           try
             cb null, JSON.parse(d).history
           catch e
-            console.log e
             cb 'err', ''
     ]
     async.parallel funcs, (e, r) ->
@@ -161,7 +158,7 @@ class SABnzbd
   @queueNZBFile = (filename, cb) ->
     nzbname = @getNZBName filename
 
-    sabReq = http.request {host: settings.sabData.host, port: settings.sabData.port, path: '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabData.apiKey}, (response) ->
+    sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey}, (response) ->
       str = ''
       response.on 'data', (data) ->
         str += data
@@ -179,11 +176,11 @@ class SABnzbd
       nzbname = SABnzbd.getNZBName url
 
       if nzbname.length > 5
-        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabData.apiKey
+        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey
       else
-        p = '/api?mode=addurl&name=' + url + '&pp=1&script=postprocess.py&apikey=' + settings.sabData.apiKey
+        p = '/api?mode=addurl&name=' + url + '&pp=1&script=postprocess.py&apikey=' + settings.sabApiKey
 
-      sabReq = http.request {host: settings.sabData.host, port: settings.sabData.port, path: p}, (response) ->
+      sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: p}, (response) ->
         str = ''
         response.on 'data', (data) ->
           str += data

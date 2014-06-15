@@ -1,16 +1,9 @@
-# configuration
-settings = require '../settings/settings'
-
 # dependencies
 fs = require 'fs'
 
-if (typeof String::startsWith != 'function')
-  String::startsWith = (str) ->
-    return this.slice(0, str.length) == str
-
-if (typeof String::endsWith != 'function')
-  String::endsWith = (str) ->
-    return this.slice(-str.length) == str
+# project dependencies
+settings = require './settings'
+logger = require './logger'
 
 class Functions
   # load users from json file
@@ -18,6 +11,8 @@ class Functions
     data = {}
     try
       data = JSON.parse fs.readFileSync(settings.userFile, 'utf8')
+    catch e
+      logger.error 'functions.getUsers(): ' + e
     return data
   # load passes from json file
   @getPasses = ->
@@ -28,6 +23,7 @@ class Functions
   # write passes back to the file
   @writePasses = (passes) ->
     fs.writeFileSync settings.postProcessPasswordsFile, JSON.stringify(passes)
+    fs.chmodSync(settings.postProcessPasswordsFile, '666')
   # get tar content information from json file
   @getTarContents = ->
     contents = []

@@ -1,20 +1,25 @@
-# configuration
-settings = require '../settings/settings'
-
+try
 # dependencies
-express = require 'express'
-path = require 'path'
-fs = require 'fs'
-http = require 'http'
-_ = require 'underscore'
-async = require 'async'
-mime = require 'mime'
+  express = require 'express'
+  path = require 'path'
+  fs = require 'fs'
+  http = require 'http'
+  _ = require 'underscore'
+  async = require 'async'
+  mime = require 'mime'
 
-# project dependencies
-logger = require './logger'
-auth = require './auth'
-sabnzbd = require './sabnzbd'
-functions = require './functions'
+  _.s = require 'underscore.string'
+  _.mixin(_.s.exports())
+
+  # project dependencies
+  settings = require './settings'
+  logger = require './logger'
+  auth = require './auth'
+  sabnzbd = require './sabnzbd'
+  functions = require './functions'
+catch e
+  console.log 'an error occured starting the application:\n' + e
+  process.exit(1)
 
 # initialize express
 app = express()
@@ -104,14 +109,14 @@ app.post '/sabdata', auth.authUser, (req, res) ->
     data.history = _.omit data.history, _.keys(_.omit data.history, 'slots')
     if data.history.slots?
       data.history.slots = _.map data.history.slots, (ss) ->
-        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist_str', 'filelist_short_str', 'fail_message', 'name', 'actionpercent', 'extendedstatus')
+        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist_str', 'filelist_short_str', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user')
 
   res.json data
 
 # route to download a file
 app.get '/downloads/:filename', auth.authUser, (req, res) ->
   logger.info 'user "' + req.user + '" downloads "' + req.params.filename + '"'
-  
+
   if fs.existsSync(settings.downloadDir + req.params.filename)
     ct = mime.lookup(settings.downloadDir + req.params.filename)
     # we only allow .tar because that is what the postprocessing gives us
@@ -122,24 +127,25 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
   else
     res.send 404
 
-# TODO: before starting the server, check settings and when check fails abort startup
-
 # start the server
-app.listen app.get('port')
-logger.info 'server listening on port ' + app.get('port')
+if settings.loaded
+  app.listen app.get('port')
+  logger.info 'server listening on port ' + app.get('port')
 
-# load current data from sabnzb every second
-loadDataInterval = () ->
-  setTimeout () ->
-    sabnzbd.updateSabData (data) ->
-      sabData = data
-      loadDataInterval()
-  , 1000
-loadDataInterval()
+  # load current data from sabnzb every second
+  loadDataInterval = () ->
+    setTimeout () ->
+      sabnzbd.updateSabData (data) ->
+        sabData = data
+        loadDataInterval()
+    , 1000
+  loadDataInterval()
 
-# cleanup passes, tarcontents and usernzbs
-setInterval () ->
-  functions.writePasses _.filter(functions.getPasses(), (p) -> p.time > new Date().getTime() - 604800000)
-  functions.writeTarContents _.filter(functions.getTarContents(), (c) -> fs.existsSync(settings.downloadDir + c.filename))
-  functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
-, 86400
+  # cleanup passes, tarcontents and usernzbs
+  setInterval () ->
+    functions.writePasses _.filter(functions.getPasses(), (p) -> p.time > new Date().getTime() - 604800000)
+    functions.writeTarContents _.filter(functions.getTarContents(), (c) -> fs.existsSync(settings.downloadDir + c.filename))
+    functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
+  , 86400
+else
+  settings.setup()

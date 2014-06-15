@@ -1,11 +1,9 @@
-# configuration
-settings = require '../settings/settings'
-
 # dependencies
 http = require 'http'
 _ = require 'underscore'
 
 # project dependencies
+settings = require './settings'
 logger = require './logger'
 functions = require './functions'
 
@@ -36,8 +34,8 @@ class Auth
         Auth.authOkay req, res, next, user
       else
         # the user is not in the user-file, try authentication using the external url if settings are set
-        if settings.remoteAuth? and settings.remoteAuth.enabled and settings.remoteAuth.host != '' and settings.remoteAuth.path != '' and settings.remoteAuth.port > 0
-          request = http.request {host: settings.remoteAuth.host, port: settings.remoteAuth.port, path: settings.remoteAuth.path + '?username=' + user + '&password=' + pass}, (response) ->
+        if settings.remoteAuthEnabled and settings.remoteAuthHost != '' and settings.remoteAuthPath != '' and settings.remoteAuthPort > 0
+          request = http.request {host: settings.remoteAuthHost, port: settings.remoteAuthPort, path: settings.remoteAuthPath + '?username=' + user + '&password=' + pass}, (response) ->
             str = ''
             response.on 'data', (chunk) ->
               str += chunk
@@ -69,13 +67,14 @@ class Auth
       _.find(@activeUsers, (u) -> u.user == user).time = new Date().getTime()
     next()
 
-# this function cleans up activeUsers
-setInterval () ->
-  # show users that left the site
-  leftUsers = _.filter(Auth.activeUsers, (u) -> u.time <= new Date().getTime() - 120000)
-  for user in leftUsers
-    logger.info 'user "' + user.user + '" left'
-  Auth.activeUsers = _.filter(Auth.activeUsers, (u) -> u.time > new Date().getTime() - 120000)
-, 1000
+if settings.loaded
+  # this function cleans up activeUsers
+  setInterval () ->
+    # show users that left the site
+    leftUsers = _.filter(Auth.activeUsers, (u) -> u.time <= new Date().getTime() - 120000)
+    for user in leftUsers
+      logger.info 'user "' + user.user + '" left'
+    Auth.activeUsers = _.filter(Auth.activeUsers, (u) -> u.time > new Date().getTime() - 120000)
+  , 1000
 
 module.exports = Auth

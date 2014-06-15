@@ -1,16 +1,14 @@
-# configuration
-settings = require '../settings/settings'
-
 # dependencies
 winston = require('winston')
 
-logger = new winston.Logger({
-    transports: [
-      # log to console
-      new winston.transports.Console({ colorize: true }),
-      # log to file
-      new winston.transports.File({ filename: settings.logFile})
-    ]
-  })
+# project dependencies
+settings = require './settings'
+
+loggers = [ new winston.transports.Console { colorize: true } ]
+
+if settings.loaded
+  loggers.push new winston.transports.File({ filename: settings.logFile })
+
+logger = new winston.Logger({ transports: loggers })
 
 module.exports = logger

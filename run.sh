@@ -9,7 +9,6 @@ compile() {
   
   ! "$C" --bare --compile --output public/js cs_public/js && return 1
   ! "$C" --bare --compile --output app cs_app && return 1
-  ! "$C" --bare --compile --output settings cs_settings && return 1
   
   return 0
 }
@@ -23,10 +22,14 @@ startnode() {
   output 'starting node...'
   C=$(which node)
   [[ $? != 0 ]] && C=$(which nodejs)
-  "$C" app/app.js &
-  Z=$!
-  sleep 1
-  ! (ps -p $Z > /dev/null 2>&1) && output 'error' 'failed to start node' && return 1 || return 0
+  if [[ $1 == 2 ]] ; then
+    "$C" app/app.js &
+    Z=$!
+    sleep 1
+    ! (ps -p $Z > /dev/null 2>&1) && output 'error' 'failed to start node' && return 1 || return 0
+  else
+    "$C" app/app.js
+  fi
 }
 
 hash() {
@@ -41,42 +44,47 @@ output() {
 
 run() {
   output 'info' 'starting up...'
-  
+
   # erstmal alles kompilieren
   ! compile && output 'error' 'error compiling file, exiting...' && exit 1
-  ! startnode && output 'error' 'error starting node, exiting...' && exit 1
-  
-  # jetzt das fs beobachten
-  previous_sha=$(hash)
-  while true; do
-    sha=$(hash)
-    if [[ $sha != $previous_sha ]] ; then
-      # es hat sich was geändert. 2 sek warten und nochmal prüfen
-      sleep 2
-      sha2=$(hash)
+
+  if [[ $1 == 'dev' ]] ; then
+    ! startnode 2 && output 'error' 'error starting node, exiting...' && exit 1
       
-      # wenn sich in den 2 sek noch mehr geändert hat, alles von vorne
-      [[ $sha != $sha2 ]] && continue
-      
-      output 'info' 'changes detected, restarting...'
-      
-      # stillstand, neu bauen und so      
-      previous_sha=$sha
-      
-      if compile; then
-        stopnode
-        ! startnode && output 'error' 'error starting node, waiting for changes...'
-      else
-        output 'error' 'error compiling file, waiting for changes...'
+    # jetzt das fs beobachten
+    previous_sha=$(hash)
+    while true; do
+      sha=$(hash)
+      if [[ $sha != $previous_sha ]] ; then
+        # es hat sich was geändert. 2 sek warten und nochmal prüfen
+        sleep 2
+        sha2=$(hash)
+        
+        # wenn sich in den 2 sek noch mehr geändert hat, alles von vorne
+        [[ $sha != $sha2 ]] && continue
+        
+        output 'info' 'changes detected, restarting...'
+        
+        # stillstand, neu bauen und so      
+        previous_sha=$sha
+        
+        if compile; then
+          stopnode
+          ! startnode 2 && output 'error' 'error starting node, waiting for changes...'
+        else
+          output 'error' 'error compiling file, waiting for changes...'
+        fi
       fi
-    fi
-    
-    if (read -s -t 2); then
-      output 'info' 'restarting...'
-      stopnode
-      startnode
-    fi
-  done
+      
+      if (read -s -t 2); then
+        output 'info' 'restarting...'
+        stopnode
+        startnode 2
+      fi
+    done
+  else
+    startnode 1
+  fi
 }
 
 control_c() {
@@ -85,5 +93,5 @@ control_c() {
 
 trap control_c SIGINT
 
-run
+run $@
 exit 0
