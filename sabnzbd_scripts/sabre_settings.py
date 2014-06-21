@@ -7,5 +7,5 @@ TAR_INCLUDE_IMAGE = scriptdir + '/sabre_includeimage.jpg'
 # WARNING: everything configured from here on has to point to the
 #          same file as in sabRE's configuration (settings.json).
 PROGRESS_FILE = '/tmp/sabre_postprocessprogress'
-PASSWORDS_FILE = scriptdir + '/../../data/passes.json'
-TAR_CONTENTS_FILE = scriptdir + '/../../data/tarcontents.json'
+PASSWORDS_FILE = scriptdir + '/../data/passes.json'
+TAR_CONTENTS_FILE = scriptdir + '/../data/tarcontents.json'
