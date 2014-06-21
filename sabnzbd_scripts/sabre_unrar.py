@@ -7,7 +7,7 @@ import traceback
 from subprocess import Popen, PIPE, STDOUT
 from datetime import datetime, timedelta
 
-import settings
+import sabre_settings as settings
 
 class unrarer:
     # gets passes for rar files to extract

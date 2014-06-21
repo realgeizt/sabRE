@@ -34,13 +34,13 @@ class Auth
         Auth.authOkay req, res, next, user
       else
         # the user is not in the user-file, try authentication using the external url if settings are set
-        if settings.remoteAuthEnabled and settings.remoteAuthHost != '' and settings.remoteAuthPath != '' and settings.remoteAuthPort > 0
+        if settings.remoteAuthEnabled and settings.remoteAuthHost isnt '' and settings.remoteAuthPath isnt '' and settings.remoteAuthPort > 0
           request = http.request {host: settings.remoteAuthHost, port: settings.remoteAuthPort, path: settings.remoteAuthPath + '?username=' + user + '&password=' + pass}, (response) ->
             str = ''
             response.on 'data', (chunk) ->
               str += chunk
             response.on 'end', () ->
-              if str.trim() == 'ok'
+              if str.trim() is 'ok'
                 req.user = user
                 Auth.authOkay req, res, next, user
               else
@@ -60,11 +60,11 @@ class Auth
   # this function is called everytime a user logs in
   @authOkay = (req, res, next, user) ->
     @activeUsers = _.filter(@activeUsers, (u) -> u.time > new Date().getTime() - 120000)
-    if not _.find(@activeUsers, (u) -> u.user == user)
+    if not _.find(@activeUsers, (u) -> u.user is user)
       @activeUsers.push { user: user, time: new Date().getTime() }
       logger.info 'user "' + user + '" logged in'
     else
-      _.find(@activeUsers, (u) -> u.user == user).time = new Date().getTime()
+      _.find(@activeUsers, (u) -> u.user is user).time = new Date().getTime()
     next()
 
 if settings.loaded

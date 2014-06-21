@@ -45,7 +45,7 @@ class Functions
   # get filesize as string
   @filesize = (a) ->
     e = Math.log(a) / Math.log(1e3) | 0
-    return (a / Math.pow(1e3, e)).toFixed(1) + " " + ((if e then "kMGTPEZY"[--e] + "B" else "Bytes"))
+    return (a / Math.pow(1e3, e)).toFixed(1) + ' ' + ((if e then 'kMGTPEZY'[--e] + 'B' else 'Bytes'))
   # clone an object
   @clone = (obj) ->
     if not obj? or typeof obj isnt 'object'

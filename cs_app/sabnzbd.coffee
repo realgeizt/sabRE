@@ -29,7 +29,7 @@ class SABnzbd
       nzbname = nzbname.substring(0, nzbname.length - 5)
     return nzbname
   @getSabData = (type, cb) ->
-    if type == 'queue'
+    if type is 'queue'
       p = '/api?mode=queue&start=0&limit=0&output=json&apikey=' + settings.sabApiKey
     else
       p = '/api?mode=history&start=0&limit=0&output=json&apikey=' + settings.sabApiKey
@@ -60,16 +60,16 @@ class SABnzbd
     async.parallel funcs, (e, r) ->
       userNZBs = functions.getUserNZBs()
       # set general data
-      if r[0]? and r[1]? and r[0] != '' and r[1] != ''
+      if r[0]? and r[1]? and r[0] isnt '' and r[1] isnt ''
         s = 'SABnzbd is running'
         s2 = 0
-        if r[0].status == 'Paused'
+        if r[0].status is 'Paused'
           s = 'SABnzbd is paused'
           s2 = 1
       else
         s = 'SABnzbd is not running'
         s2 = 1
-      run = r[0] != ''
+      run = r[0] isnt ''
 
       # modify sabnzbd data
       if r[0]?
@@ -81,7 +81,7 @@ class SABnzbd
 
         if r[0].slots?
           # hide specific slots by name
-          r[0].slots = _.filter r[0].slots, (s) -> !(_.find settings.sabHideQueue, (q) -> s.filename.substring(0, q.length) == q)
+          r[0].slots = _.filter r[0].slots, (s) -> !(_.find settings.sabHideQueue, (q) -> s.filename.substring(0, q.length) is q)
           # append responsible username to slot if needed
           if settings.hideOtherUsersData
             _.each r[0].slots, (s) ->
@@ -97,32 +97,32 @@ class SABnzbd
             s.user = _.find(userNZBs, (u) -> u.nzb is s.name).user if _.find(userNZBs, (u) -> u.nzb is s.name)?
 
         # iterate every slot and adjust it's data so it is useful to the client
-        r[1].slots = _.filter r[1].slots, (s) -> s.status != 'Completed' || (s.status == 'Completed' && fs.existsSync(settings.downloadDir + s.name + '.tar'))
+        r[1].slots = _.filter r[1].slots, (s) -> s.status isnt 'Completed' || (s.status is 'Completed' && (settings.noPostProcess or fs.existsSync(settings.downloadDir + s.name + '.tar')))
         _.each r[1].slots, (s) ->
           s.actionpercent = -1
           try
-            if s.status == 'Verifying'
+            if s.status is 'Verifying'
               try
                 done = parseInt s.action_line.split(' ')[1].split('/')[0]
                 max = parseInt s.action_line.split(' ')[1].split('/')[1]
                 s.actionpercent = parseInt (parseFloat(done) / max) * 100
               catch e
                 s.actionpercent = -1
-            if s.status == 'Repairing'
+            if s.status is 'Repairing'
               try
                 s.actionpercent = parseInt s.action_line.split(' ')[1].split('%')[0]
               catch e
                 s.actionpercent = 0
-            if s.status == 'Extracting'
+            if s.status is 'Extracting'
               done = parseInt s.action_line.split(' ')[1].split('/')[0]
               max = parseInt s.action_line.split(' ')[1].split('/')[1]
               try
                 s.actionpercent = parseInt (parseFloat(done) / max) * 100
               catch e
                 s.actionpercent = 0
-            if s.status == 'Running'
+            if s.status is 'Running'
               data = fs.readFileSync(settings.postProcessProgressFile).toString().split('|')
-              if data[0].toLowerCase() == 'rar'
+              if data[0].toLowerCase() is 'rar'
                 s.status = 'Extracting'
               else
                 s.status = 'Building'
@@ -131,10 +131,10 @@ class SABnzbd
             s.actionpercent = -1
 
           s.filelist = []
-          if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status == 'Completed'
+          if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status is 'Completed'
             tc = functions.getTarContents()
-            tc = _.filter tc, (asdf) -> asdf.filename == s.name + '.tar'
-            if tc.length == 1
+            tc = _.filter tc, (asdf) -> asdf.filename is s.name + '.tar'
+            if tc.length is 1
               s.filelist = tc[0].files
 
           s.filelist_short = _.first s.filelist, 5
@@ -142,49 +142,54 @@ class SABnzbd
             s.filelist_short.push '...'
           s.filelist_str = s.filelist.join ', '
           s.filelist_short_str = s.filelist_short.join ', '
-          if s.filelist_str != ''
+          if s.filelist_str isnt ''
             s.filelist_str = s.filelist.length + ' File(s): ' + s.filelist_str
             s.filelist_short_str = s.filelist.length + ' File(s): ' + s.filelist_short_str
 
-          if (s.status == 'Repairing' or s.status == 'Extracting' or s.status == 'Building' or s.status == 'Running') and s.actionpercent == -1
+          if (s.status is 'Repairing' or s.status is 'Extracting' or s.status is 'Building' or s.status is 'Running') and s.actionpercent is -1
             s.status = 'Working'
 
-          if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status != 'Failed'
+          if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status isnt 'Failed'
             s.size = functions.filesize(fs.statSync(settings.downloadDir + s.name + '.tar')["size"]).toUpperCase()
-          else if s.status == 'Failed'
+          else if s.status is 'Failed'
             s.size = null
 
       cb {running: run, queue: r[0], history: r[1], status: s, statusint: s2}
-  @queueNZBFile = (filename, cb) ->
+  @queueNZBFile = (filename, username, cb) ->
     nzbname = @getNZBName filename
 
-    sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: encodeURI('/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey)}, (response) ->
+    if settings.noPostProcess
+      p = '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&cat=' + username + '&pp=3&apikey=' + settings.sabApiKey
+    else
+      p = '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&pp=3&script=sabre_postprocess.py&apikey=' + settings.sabApiKey
+
+    sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: encodeURI(p)}, (response) ->
       str = ''
       response.on 'data', (data) ->
         str += data
       response.on 'end', () ->
-        if str.trim() == 'ok'
+        if str.trim() is 'ok'
           cb nzbname, true
         else
           cb nzbname, false
     sabReq.on 'error', (err) ->
       cb '', false
     sabReq.end()
-  @queueNZBUrl = (url, cb) ->
+  @queueNZBUrl = (url, username, cb) ->
     realQueueNZBLink = (url, cb) ->
       nzbname = SABnzbd.getNZBName url
 
-      if nzbname.length > 5
-        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=3&script=postprocess.py&apikey=' + settings.sabApiKey
+      if settings.noPostProcess
+        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&cat=' + username + '&pp=3&apikey=' + settings.sabApiKey
       else
-        p = '/api?mode=addurl&name=' + url + '&pp=1&script=postprocess.py&apikey=' + settings.sabApiKey
+        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=3&script=sabre_postprocess.py&apikey=' + settings.sabApiKey
 
-      sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: p}, (response) ->
+      sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: encodeURI(p)}, (response) ->
         str = ''
         response.on 'data', (data) ->
           str += data
         response.on 'end', () ->
-          if str.trim() == 'ok'
+          if str.trim() is 'ok'
             cb nzbname, true
           else
             cb '', false
@@ -194,7 +199,7 @@ class SABnzbd
 
     if settings.useCurl
       exec 'curl -k ' + url, {maxBuffer: 1024 * 1024 * 30}, (err, stdout, stderr) ->
-        if err || stdout.trim() == ''
+        if err || stdout.trim() is ''
           return cb '', false
         realQueueNZBLink url, cb
     else

@@ -11,8 +11,8 @@ import shutil
 import random, string
 import traceback
 
-import settings
-from unrar import unrarer
+import sabre_settings as settings
+from sabre_unrar import unrarer
 
 # this thread sends SIGUSR1 to tar so that it outputs its progress
 class SignalSender(threading.Thread): 

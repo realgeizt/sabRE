@@ -75,7 +75,7 @@ block content
               input(type='text', placeholder='Link to NZB file', ng-model='nzburl')
             .small-3.columns
               a.small.expand.button(ng-disabled='!nzburl || sendstate.sending || !sabdata.running', ng-click='sendNZBUrl()') Add NZB link
-      .row(ng-show='auth.ok && sabdata.running')
+      .row(ng-show='auth.ok && sabdata.running && !sabdata.noPostProcess')
         .small-12.columns
           .row
             .small-6.columns
