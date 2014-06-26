@@ -135,17 +135,22 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
     filesize = fs.statSync(filename)["size"]
     start = 0
     end = filesize - 1
+    partial = false
     if req.headers? and req.headers.range?
       try
         range = req.headers.range.toLowerCase()
         if range.split('bytes=').length is 2
+          partial = true
           range = _.map(_.filter(range.split('bytes=')[1].split('-'), (r) -> parseInt(r) and not _.isNaN(r)), (r) -> parseInt r)
           start = parseInt range[0] if range.length > 0
           end = parseInt range[1] if range.length > 1
       catch e
         return res.send 500
 
-    res.writeHead 200, { 'Content-Length': end - start, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
+    if partial
+      res.writeHead 206, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
+    else
+      res.writeHead 200, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
 
     stream = fs.createReadStream filename, { bufferSize: 64 * 1024, start: start, end: end }
     stream.pipe res
