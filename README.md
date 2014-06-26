@@ -1,6 +1,6 @@
 sabRE
 =====
-sabRE is a frontend to control SABnzbd, it enables you to share access to your instance of SABnzbd using the SABnzbd API.
+sabRE is a frontend which allows multiple users to control SABnzbd, it enables you to share access to your instance of SABnzbd using the SABnzbd API.
 * Users can enqueue NZB files or URLs containing a NZB file
 * Users can supply passwords for extraction of RAR archives
 * sabRE provides an overview about what is happening in SABnzbd (queue/history)
