@@ -40,3 +40,7 @@ When TAR_CONTENTS_FILE in settings.py is incorrect sabRE won't display contents 
 Development
 -----------
 For me sabRE does everything I need and I won't integrate new features, but modifying and extending sabRE is easy! Just give it a try. When you intend to change the CoffeeScript files, don't just execute ```./run.sh ``` to test it, use ```./run.sh dev ```. This way it watches for changes and restarts the application. Pull requests are welcome!
+
+Contact
+-------
+To get in touch with me, just post in this thread - I should be notified by mail: http://forums.sabnzbd.org/viewtopic.php?f=6&t=17636
