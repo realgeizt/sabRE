@@ -1,6 +1,6 @@
 sabRE
 =====
-sabRE is a frontend to control SABnzbd, it enables you to share access to your instance of SABnzbd using the SABnzbd API.
+sabRE is a frontend which allows multiple users to control SABnzbd, it enables you to share access to your instance of SABnzbd using the SABnzbd API.
 * Users can enqueue NZB files or URLs containing a NZB file
 * Users can supply passwords for extraction of RAR archives
 * sabRE provides an overview about what is happening in SABnzbd (queue/history)
@@ -36,3 +36,11 @@ If everything went okay, sabRE is configured and running now, but you may still 
 * If you do not use other postprocessing scripts just configure SABnzbd to use sabRE's postprocessing script directory sabnzbd_scripts. You can do so by using the option "Folders"->"Post-Processing Scripts Folder" in the SABnzbd setup.
 * If you use other postprocessing scripts you need to put these scripts together with sabRE's scripts into one directory so SABnzbd can use them all. This means you have to copy sabRE's scripts to another directory or copy other scripts to sabRE's script directory (sabnzbd_scripts). Copying other scripts into sabRE's script directory should be no problem, but when you move sabRE's scripts to another directory you have to make sure that the variables PASSWORDS_FILE and TAR_CONTENTS_FILE in settings.py point to the same files as configured in settings.json which is used by sabRE itself, also make sure to copy all .py files, not only postprocess.py.  
 When TAR_CONTENTS_FILE in settings.py is incorrect sabRE won't display contents of tar archives containing downloaded files created by the postprocessor, when PASSWORDS_FILE is incorrect sabRE's postprocessor won't be able to unrar password-protected archives.
+
+Development
+-----------
+For me sabRE does everything I need and I won't integrate new features, but modifying and extending sabRE is easy! Just give it a try. When you intend to change the CoffeeScript files, don't just execute ```./run.sh ``` to test it, use ```./run.sh dev ```. This way it watches for changes and restarts the application. Pull requests are welcome!
+
+Contact
+-------
+To get in touch with me, just post in this thread - I should be notified by mail: http://forums.sabnzbd.org/viewtopic.php?f=6&t=17636
