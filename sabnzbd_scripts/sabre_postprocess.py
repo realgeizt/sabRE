@@ -58,6 +58,22 @@ class PostProcessor:
             subprocess.Popen(["chmod", "666", settings.PROGRESS_FILE, ])
         except Exception, e:
             print traceback.format_exc(e)
+    # renames potentially dangerous files in order to protect noobs :)
+    def renameexecutables(self, startpath = '.'):
+        print 'renaming executables...'
+        badextensions = ['.com', '.exe', '.bat', '.cmd', '.vbs', '.vbe', '.wsh', '.wsf', '.scr', '.msi']
+        for dirpath, dirnames, filenames in os.walk(startpath):
+            for f in filenames:
+                f = f.decode('utf-8', 'ignore')
+                base = os.path.splitext(f)[0]
+                ext = os.path.splitext(f)[1]
+                if len(base) > 0 and len(ext) > 0 and ext.lower() in badextensions:
+                    try:
+                        newname = base + ext + '_'
+                        print 'renaming executable "%s" to "%s"' % (f.encode('ascii', 'replace'), newname.encode('ascii', 'replace'))
+                        os.rename(dirpath + '/' + f, dirpath + '/' + newname)
+                    except:
+                        print 'could not rename executable "%s"' % f.encode('ascii', 'replace')
     def writecontents(self):
         try:
             json_data = open(settings.TAR_CONTENTS_FILE, 'r')
@@ -114,7 +130,11 @@ class PostProcessor:
         
         size = self.getsize(self.downloadDir + self.downloadFile)
         rndImgFile = self.randomword(10) + '.jpg'
-
+        
+        # if desired rename windows executables
+        if settings.RENAME_WINDOWS_EXECUTABLES:
+            self.renameexecutables(self.downloadDir + self.downloadFile)
+        
         # write contents of soon created tar file to file read by sabRE
         print 'modifying tar content file'
         try:
@@ -177,7 +197,6 @@ class PostProcessor:
         else:
             print 'completed successfully'
             return 0
-
 
 # check arguments
 if len(sys.argv) < 2: #8:
