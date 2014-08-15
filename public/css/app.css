@@ -1,18 +1,20 @@
 #spinner
 {
-    width:100px;
-    height: 100px;
+    width:130px;
+    height: 90px;
     position: fixed;
     top: 50%;
     left: 50%;
-    background:url(/img/ajax-loader.gif) no-repeat center #fff;
-    text-align:center;
-    padding:10px;
-    font:normal 16px Tahoma, Geneva, sans-serif;
-    border:1px solid #666;
+    background: url(/img/ajax-loader.gif) no-repeat #fff;
+    background-position: 50% 70%;
+    background-color: #f9a400;
+    text-align: center;
+    padding: 7px;
+    font: normal 16px Tahoma, Geneva, sans-serif;
+    border: 1px solid #666;
     margin-left: -50px;
     margin-top: -50px;
-    z-index:1000;
+    z-index: 1000;
     overflow: auto;
 }
 
