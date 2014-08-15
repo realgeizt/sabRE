@@ -159,7 +159,7 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
 
 if settings.loaded
   # start the server
-  app.listen settings.port, () =>
+  app.listen settings.port, '::', () =>
     logger.info 'server listening on port ' + settings.port
   .on 'error', (e) ->
     logger.error _.sprintf('could not listen on port %d, is it already in use?', settings.port)
