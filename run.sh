@@ -1,9 +1,9 @@
 #!/bin/bash
 
 compile() {
-  C=$(which coffee)
+  C=$(which iced)
   if [[ $? != 0 ]] ; then
-    C='./node_modules/coffee-script/bin/coffee'
+    C='./node_modules/iced-coffee-script/bin/coffee'
     [[ ! -e "$C" ]] && output 'error' 'coffee executable not found (did you forget "npm install"?)' && return 1
   fi
   
