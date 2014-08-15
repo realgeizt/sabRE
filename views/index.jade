@@ -57,10 +57,6 @@ block content
       .row(ng-show='auth.ok && sabdata.running')
         .small-12.columns
           a.small.expand.alert.button(ng-show='sendstate.err', ng-click='sendstate.err=false') Could not send data
-          a.small.expand.success.button(ng-show='sendstate.success', ng-click='sendstate.success=false') Data sent
-          .small.expand.success.button(style='background-color: #f9a400; cursor: default;', ng-show='sendstate.sending')
-            img(src='/img/spinner_small.gif')
-            span(style='padding-left: 8px;') Sending, please wait...
       .row(ng-show='auth.ok && sabdata.running')
         .small-12.columns
           .row
