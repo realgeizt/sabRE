@@ -14,9 +14,9 @@ if settings.useCurl
   exec = require('child_process').exec
 
 class SABnzbd
-  @addUserNZB = (username, nzbname) ->
+  @addUserNZB = (username, nzbname, flac2mp3) ->
     userNZBs = functions.getUserNZBs()
-    userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime()}
+    userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime(), flac2mp3: flac2mp3}
     functions.writeUserNZBs(userNZBs)
   @getNZBName = (name) ->
     nzbname = path.basename name
@@ -97,7 +97,7 @@ class SABnzbd
             s.user = _.find(userNZBs, (u) -> u.nzb is s.name).user if _.find(userNZBs, (u) -> u.nzb is s.name)?
 
         # iterate every slot and adjust it's data so it is useful to the client
-        r[1].slots = _.filter r[1].slots, (s) -> s.status isnt 'Completed' || (s.status is 'Completed' && (settings.noPostProcess or fs.existsSync(settings.downloadDir + s.name + '.tar')))
+        r[1].slots = _.filter r[1].slots, (s) -> (s.status isnt 'Completed' || (s.status is 'Completed' && (settings.noPostProcess or fs.existsSync(settings.downloadDir + s.name + '.tar')))) and (settings.downloadExpireDays is 0 or (s.completed > (new Date().getTime() / 1000) - 86400 * settings.downloadExpireDays))
         _.each r[1].slots, (s) ->
           s.actionpercent = -1
           try
@@ -127,6 +127,7 @@ class SABnzbd
               else
                 s.status = 'Building'
               s.actionpercent = parseInt data[1]
+
           if _.isNaN(s.actionpercent)
             s.actionpercent = -1
 
@@ -136,15 +137,9 @@ class SABnzbd
             tc = _.filter tc, (asdf) -> asdf.filename is s.name + '.tar'
             if tc.length is 1
               s.filelist = tc[0].files
-
-          s.filelist_short = _.first s.filelist, 5
-          if s.filelist.length > s.filelist_short.length
-            s.filelist_short.push '...'
-          s.filelist_str = s.filelist.join ', '
-          s.filelist_short_str = s.filelist_short.join ', '
-          if s.filelist_str isnt ''
-            s.filelist_str = s.filelist.length + ' File(s): ' + s.filelist_str
-            s.filelist_short_str = s.filelist.length + ' File(s): ' + s.filelist_short_str
+            s.downloadable = settings.sabreDownloadsEnabled
+          else
+            s.downloadable = false
 
           if (s.status is 'Repairing' or s.status is 'Extracting' or s.status is 'Building' or s.status is 'Running') and s.actionpercent is -1
             s.status = 'Working'
