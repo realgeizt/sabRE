@@ -27,7 +27,10 @@ class Settings
     { stage: 2, name: 'port', desc: 'the port sabRE listens on.', default: 3000, type: 'int' }
     { stage: 2, name: 'useCurl', desc: 'check urls with curl before enqueueing to SABnzbd?', default: false, type: 'bool' }
     { stage: 2, name: 'hideOtherUsersData', desc: 'when enabled, users can only see stuff they enqueued. files from other users are hidden.', default: false, type: 'bool' }
+    { stage: 2, name: 'downloadExpireDays', desc: 'when set to a value >0 downloads will be hidden when configured number of days have elapsed since the completion of the download.', default: 0, type: 'int' }
     { stage: 2, name: 'noPostProcess', desc: 'when this is enabled no postprocessing (creation of tar archive) will take place. instead sabRE tries to set the category of the download to the currently logged in user\'s name so you can set up shares on the server to let users download the files directly. when enabling this, don\'t forget to configure categories in SABnzbd, one for each user. otherwise files will be downloaded to the regular download dir without placing them in separate directories for each user. enabled postprocessing requires sabRE to run on the same machine as SABnzbd.', default: false, type: 'bool' }
+    { stage: 2, name: 'noFLAC2MP3', desc: 'when this is enabled the option to convert downloaded .flac files to .mp3 files will not be provided in the user interface. this feature requires the applications "flac", "metaflac" and "lame".', default: false, type: 'bool' }
+    { stage: 2, name: 'sabreDownloadsEnabled', desc: 'when enabled sabRE allows users to download files from the webinterface. this only works if you did not disable postprocessing before.', default: true, type: 'bool' }
     { stage: 2, name: 'logFile', desc: 'file where sabRE logs into.', default: '../data/log.json', type: 'file', mustExist: false, wizardEnabled: false }
     { stage: 2, name: 'userFile', desc: 'sabRE\'s user/password "database".', default: '../data/users.json', type: 'file', wizardEnabled: false }
     { stage: 2, name: 'nzbUploadDir', desc: 'directory where uploaded .nzb files will be stored. files will be deleted after they have been enqueued.', default: '/tmp/', type: 'dir' }
@@ -82,7 +85,10 @@ class Settings
           @[s.name] = val
           @loadedKeys.push s.name
         else
-          throw _.sprintf 'setting "%s" with value "%s" is invalid', s.name, val
+          if val is undefined
+            throw _.sprintf 'setting "%s" is undefined', s.name
+          else
+            throw _.sprintf 'setting "%s" with value "%s" is invalid', s.name, val
       if not @validateSettings()
         throw 'could not validate settings'
       @loaded = true
@@ -141,8 +147,6 @@ class Settings
   @validateSettings = (stage) ->
     for s in _.filter(@configSchema, (s) -> s.stage is stage)
       if not @validateField @[s.name], s
-        console.log @[s.name]
-        console.log s.name
         process.exit 1
         return false
     return true
@@ -440,7 +444,7 @@ class Settings
              an error occured loading the sabRE configuration, the error was:
              %s.
              please fix settings.json and run sabRE again. if you want to recreate the file,
-             just delete it and run sabRE again so the setup wizard can be used.
+             just delete it and run sabRE again so the setup wizard will start up.
 
              '''
       console.log _.sprintf msg, @errorMsg
