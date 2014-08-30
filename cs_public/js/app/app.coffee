@@ -58,7 +58,7 @@ app.controller 'UICtrl', ($scope, $rootScope, $http) ->
     fr = new FileReader()
     fr.onload = ->
       oldfile = $scope.file.name
-      $http.post('/nzb', _.extend(login, {nzbdata: fr.result, nzbname: $scope.file.name})).success (data, status, headers, config) ->
+      $http.post('/nzb', _.extend(login, {nzbdata: fr.result, nzbname: $scope.file.name, flac2mp3: $scope.flac2mp3})).success (data, status, headers, config) ->
         $scope.sendstate = {err: false, success: true, sending: false}
         if oldfile is $scope.file.name
           $scope.file = null
@@ -74,7 +74,7 @@ app.controller 'UICtrl', ($scope, $rootScope, $http) ->
     $scope.sendstate = {err: false, success: false, sending: true}
 
     oldurl = $scope.nzburl
-    $http.post('/nzburl', _.extend(login, {nzburl: $scope.nzburl})).success (data, status, headers, config) ->
+    $http.post('/nzburl', _.extend(login, {nzburl: $scope.nzburl, flac2mp3: $scope.flac2mp3})).success (data, status, headers, config) ->
       $scope.sendstate = {err: false, success: true, sending: false}
       if oldurl is $scope.nzburl
         $scope.nzburl = ''
