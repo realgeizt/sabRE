@@ -48,6 +48,9 @@ app.post '/login', auth.authUser, (req, res) ->
 
 # route to add a nzb by user-uploaded file to sabnzbd
 app.post '/nzb', auth.authUser, (req, res) ->
+  if req.body.flac2mp3? and (not _.isBoolean req.body.flac2mp3 or not settings.noFLAC2MP3)
+    return res.send 500
+
   logger.info 'user "' + req.user + '" queued "' + req.body.nzbname + '"'
 
   filename = path.join(settings.nzbUploadDir + path.basename(req.body.nzbname))
@@ -56,18 +59,21 @@ app.post '/nzb', auth.authUser, (req, res) ->
   sabnzbd.queueNZBFile filename, req.user, (nzbName, queueRes) ->
     fs.unlink filename
     if queueRes
-      sabnzbd.addUserNZB req.user, nzbName
+      sabnzbd.addUserNZB req.user, nzbName, req.body.flac2mp3
       res.json nzb: true
     else
       res.send 500
 
 # route to add a nzb by url to sabnzbd
 app.post '/nzburl', auth.authUser, (req, res) ->
+  if req.body.flac2mp3? and (not _.isBoolean req.body.flac2mp3 or not settings.noFLAC2MP3)
+    return res.send 500
+
   logger.info 'user "' + req.user + '" queued URL "' + req.body.nzburl + '"'
 
   sabnzbd.queueNZBUrl req.body.nzburl, req.user, (nzbName, queueRes) ->
     if queueRes
-      sabnzbd.addUserNZB req.user, nzbName
+      sabnzbd.addUserNZB req.user, nzbName, req.body.flac2mp3
       res.json nzb: true
     else
       res.send 500
@@ -92,6 +98,7 @@ app.post '/nzbpass', auth.authUser, (req, res) ->
 app.post '/sabdata', auth.authUser, (req, res) ->
   data = functions.clone sabData
   data.noPostProcess = settings.noPostProcess
+  data.noFLAC2MP3 = settings.noFLAC2MP3
 
   if data? and data.queue? and data.history?
     # if a user should only see data he enqueued, remove other data here
@@ -109,12 +116,15 @@ app.post '/sabdata', auth.authUser, (req, res) ->
     data.history = _.omit data.history, _.keys(_.omit data.history, 'slots')
     if data.history.slots?
       data.history.slots = _.map data.history.slots, (ss) ->
-        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist_str', 'filelist_short_str', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user')
+        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user', 'downloadable')
 
   res.json data
 
 # route to download a file
 app.get '/downloads/:filename', auth.authUser, (req, res) ->
+  if not settings.sabreDownloadsEnabled
+    return res.send 404
+
   logger.info 'user "' + req.user + '" downloads "' + req.params.filename + '"'
 
   filename = path.resolve __dirname, settings.downloadDir + req.params.filename
