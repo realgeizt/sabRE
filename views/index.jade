@@ -4,7 +4,7 @@ block content
     .small-12.columns.large-centered
       .row
         .small-12.columns
-          .row(sytle='border-width: 1px; border-style: solid;')
+          .row
             .small-10.columns(style='width: 250px;')
               h1(style='float: left;')= title
               i(style='float: right; color: #ba0000;').fa.fa-flash.fa-4x
@@ -71,6 +71,12 @@ block content
               input(type='text', placeholder='Link to NZB file', ng-model='nzburl')
             .small-3.columns
               a.small.expand.button(ng-disabled='!nzburl || sendstate.sending || !sabdata.running', ng-click='sendNZBUrl()') Add NZB link
+      .row(ng-show='auth.ok && sabdata.running && !sabdata.noPostProcess && !sabdata.noFLAC2MP3')
+        .small-12.columns
+          .row
+            .small-12.columns
+              input(type='checkbox', name='flac2mp3', id='flac2mp3', ng-model='flac2mp3')
+              label(for='flac2mp3') Convert FLAC to MP3
       .row(ng-show='auth.ok && sabdata.running && !sabdata.noPostProcess')
         .small-12.columns
           .row
@@ -88,11 +94,11 @@ block content
           table(style='width: 100%; table-layout: fixed;')
             tr
               th(style='width: 5%') Status
-              th(style='width: 50%;') Name
+              th(style='width: 55%;') Name
               th(style='width: 10%;') Size
               th(style='width: 10%') Left
               th(style='width: 10%;') Progress
-              th(style='width: 15%;') Time left
+              th(style='width: 10%;') Time left
             tr(ng-repeat="slot in sabdata.queue.slots")
               td
                 i(ng-show='slot.status == "Downloading" || slot.status == "Fetching"' style='color: #078f00').fa.fa-download
@@ -122,7 +128,7 @@ block content
               th(style='width: 65%') Name
               th(style='width: 10%') Size
             tr(ng-repeat="slot in sabdata.history.slots")
-              td
+              td.join(',')
                 div(title='{{slot.fail_message}}' style='text-overflow: ellipsis; overflow: hidden; white-space: nowrap;')
                   i(ng-show='slot.status == "Completed"' style='color: #078f00').fa.fa-check
                   i(ng-show='slot.status == "Failed"' style='color: #c30012').fa.fa-minus-circle
@@ -139,11 +145,13 @@ block content
                   span(class="meter" style="width: {{slot.actionpercent}}%; background-color: #f9a400")
               td
                 div(title='{{slot.name}}', style='width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;')
-                  a(ng-show='slot.status == "Completed"', ng-href='/downloads/{{slot.name}}.tar', target='_blank') {{slot.name}}
-                  span(ng-show='!(slot.status == "Completed")') {{slot.name}}
-                div(title='{{slot.filelist_str}}' ng-show='slot.status == "Completed"' style='font-size: 9px; line-height: 10px;') {{slot.filelist_short_str}}
+                  a(ng-show='slot.status == "Completed" && slot.downloadable', ng-href='/downloads/{{slot.name}}.tar', target='_blank') {{slot.name}}
+                  span(ng-show='!(slot.status == "Completed") || !slot.downloadable') {{slot.name}}
+                div(title='{{slot.filelist.join("\n")}}' ng-show='slot.status == "Completed" && slot.filelist.length <= 5' style='font-size: 9px; line-height: 10px;')
+                  | {{slot.filelist.join(', ')}}
+                div(title='{{slot.filelist.join("\n")}}' ng-show='slot.status == "Completed" && slot.filelist.length > 5' style='font-size: 9px; line-height: 10px;')
+                  | {{(slot.filelist | limitTo: 5).join(', ')}}...
               td.text-right(ng-show='!(slot.size == "0.0 BYTES")') {{slot.size}}
-
       .row
         .small-12.columns.text-center
           hr(style='margin: 0px 0px 10px 0px;')
