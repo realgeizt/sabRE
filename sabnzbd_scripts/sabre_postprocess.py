@@ -13,13 +13,14 @@ import traceback
 
 import sabre_settings as settings
 from sabre_unrar import unrarer
+from sabre_flac2mp3 import flac2mp3
 
 # this thread sends SIGUSR1 to tar so that it outputs its progress
 class SignalSender(threading.Thread): 
-    def __init__(self): 
+    def __init__(self):
         threading.Thread.__init__(self)
         self.pid = -1
-    def run(self): 
+    def run(self):
         while True:
             time.sleep(1)
             try:
@@ -55,7 +56,8 @@ class PostProcessor:
             f = open(settings.PROGRESS_FILE, 'w')
             f.write(type.upper() + '|' + str(progress))
             f.close()
-            subprocess.Popen(["chmod", "666", settings.PROGRESS_FILE, ])
+            proc2 = subprocess.Popen(["chmod", "666", settings.PROGRESS_FILE, ])
+            proc2.wait()
         except Exception, e:
             print traceback.format_exc(e)
     # renames potentially dangerous files in order to protect noobs :)
@@ -91,12 +93,28 @@ class PostProcessor:
 
         with open(settings.TAR_CONTENTS_FILE, 'w') as outfile:
           json.dump(data, outfile)
-        subprocess.Popen(["chmod", "666", settings.TAR_CONTENTS_FILE, ])
+        proc2 = subprocess.Popen(["chmod", "666", settings.TAR_CONTENTS_FILE, ])
+        proc2.wait()
+    def getusernzb(self, nzb, prop):
+        try:
+            json_data = open(settings.USER_NZBS_FILE, 'r')
+            data = json.load(json_data)
+            for val in data:
+                try:
+                    if val['nzb'] == nzb:
+                        return val[prop]
+                except:
+                    pass
+            json_data.close()
+        except:
+            pass
+        return None
     def run(self):
         error = False
         
         # get path to downloaded files
         downloadDir = sys.argv[1]
+        originalName = sys.argv[3]
         if not os.path.exists(downloadDir):
             print 'directory "%s" does not exist' % downloadDir
             return 1
@@ -134,6 +152,11 @@ class PostProcessor:
         # if desired rename windows executables
         if settings.RENAME_WINDOWS_EXECUTABLES:
             self.renameexecutables(self.downloadDir + self.downloadFile)
+        
+        # if wanted convert flac to mp3
+        if self.getusernzb(originalName, 'flac2mp3'):
+            print 'converting flac to mp3'
+            flac2mp3(self.downloadDir + self.downloadFile).run()
         
         # write contents of soon created tar file to file read by sabRE
         print 'modifying tar content file'
@@ -176,7 +199,8 @@ class PostProcessor:
 
         # allow access to everybody...
         try:
-            subprocess.Popen(["chmod", "666", self.downloadFile + '.tar', ])
+            proc2 = subprocess.Popen(["chmod", "666", self.downloadFile + '.tar', ])
+            proc2.wait()
         except Exception, e:
             print traceback.format_exc(e)
 
@@ -199,7 +223,7 @@ class PostProcessor:
             return 0
 
 # check arguments
-if len(sys.argv) < 2: #8:
+if len(sys.argv) < 4:
     print 'args missing...'
     sys.exit(1)
 
