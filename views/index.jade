@@ -125,7 +125,9 @@ block content
             tr
               th(style='width: 15%') Status
               th(style='width: 10%') Progress
-              th(style='width: 65%') Name
+              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 55%') Name
+              th(ng-show='!sabdata.sabreDownloadsEnabled' style='width: 65%') Name
+              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 10%') DLs
               th(style='width: 10%') Size
             tr(ng-repeat="slot in sabdata.history.slots")
               td.join(',')
@@ -151,6 +153,7 @@ block content
                   | {{slot.filelist.join(', ')}}
                 div(title='{{slot.filelist.join("\n")}}' ng-show='slot.status == "Completed" && slot.filelist.length > 5' style='font-size: 9px; line-height: 10px;')
                   | {{(slot.filelist | limitTo: 5).join(', ')}}...
+              td.text-right(ng-show='sabdata.sabreDownloadsEnabled') {{slot.downloads}}
               td.text-right(ng-show='!(slot.size == "0.0 BYTES")') {{slot.size}}
       .row
         .small-12.columns.text-center

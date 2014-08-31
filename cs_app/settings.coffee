@@ -340,6 +340,7 @@ class Settings
       console.log 'copying...'
       cpf 'sabre_postprocess.py'
       cpf 'sabre_unrar.py'
+      cpf 'sabre_flac2mp3.py'
       cpf 'sabre_settings.py'
       cpf 'sabre_includeimage.jpg'
     save = =>

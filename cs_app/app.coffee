@@ -99,6 +99,7 @@ app.post '/sabdata', auth.authUser, (req, res) ->
   data = functions.clone sabData
   data.noPostProcess = settings.noPostProcess
   data.noFLAC2MP3 = settings.noFLAC2MP3
+  data.sabreDownloadsEnabled = settings.sabreDownloadsEnabled
 
   if data? and data.queue? and data.history?
     # if a user should only see data he enqueued, remove other data here
@@ -116,7 +117,7 @@ app.post '/sabdata', auth.authUser, (req, res) ->
     data.history = _.omit data.history, _.keys(_.omit data.history, 'slots')
     if data.history.slots?
       data.history.slots = _.map data.history.slots, (ss) ->
-        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user', 'downloadable')
+        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user', 'downloadable', 'downloads')
 
   res.json data
 
@@ -156,6 +157,15 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
           end = parseInt range[1] if range.length > 1
       catch e
         return res.send 500
+
+    userNZBs = functions.getUserNZBs()
+    nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
+    if nzb
+      if nzb.downloads?
+        nzb.downloads += 1
+      else
+        nzb.downloads = 1
+      functions.writeUserNZBs(userNZBs)
 
     if partial
       res.writeHead 206, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }

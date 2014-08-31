@@ -16,7 +16,7 @@ if settings.useCurl
 class SABnzbd
   @addUserNZB = (username, nzbname, flac2mp3) ->
     userNZBs = functions.getUserNZBs()
-    userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime(), flac2mp3: flac2mp3}
+    userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime(), flac2mp3: flac2mp3, downloads: 0}
     functions.writeUserNZBs(userNZBs)
   @getNZBName = (name) ->
     nzbname = path.basename name
@@ -143,6 +143,15 @@ class SABnzbd
 
           if (s.status is 'Repairing' or s.status is 'Extracting' or s.status is 'Building' or s.status is 'Running') and s.actionpercent is -1
             s.status = 'Working'
+
+          nzb = _.find(userNZBs, (n) -> n.nzb is s.name)
+          if nzb
+            if nzb.downloads
+              s.downloads = nzb.downloads
+            else
+              s.downloads = 0
+          else
+            s.downloads = 0
 
           if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status isnt 'Failed'
             s.size = functions.filesize(fs.statSync(settings.downloadDir + s.name + '.tar')["size"]).toUpperCase()
