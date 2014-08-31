@@ -158,14 +158,15 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
       catch e
         return res.send 500
 
-    userNZBs = functions.getUserNZBs()
-    nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
-    if nzb
-      if nzb.downloads?
-        nzb.downloads += 1
-      else
-        nzb.downloads = 1
-      functions.writeUserNZBs(userNZBs)
+    res.on 'finish', () ->
+      userNZBs = functions.getUserNZBs()
+      nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
+      if nzb
+        if nzb.downloads?
+          nzb.downloads += 1
+        else
+          nzb.downloads = 1
+        functions.writeUserNZBs(userNZBs)
 
     if partial
       res.writeHead 206, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }

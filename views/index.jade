@@ -121,13 +121,13 @@ block content
           h3 Finished downloads
       .row(ng-show='auth.ok && sabdata.running')
         .small-12.columns
-          table(style='width: 100%; table-layout: fixed;')
+          table(style='width: 100%; table-layout: fixed')
             tr
               th(style='width: 15%') Status
               th(style='width: 10%') Progress
-              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 55%') Name
+              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 60%') Name
               th(ng-show='!sabdata.sabreDownloadsEnabled' style='width: 65%') Name
-              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 10%') DLs
+              th(ng-show='sabdata.sabreDownloadsEnabled' style='width: 5%') DLs
               th(style='width: 10%') Size
             tr(ng-repeat="slot in sabdata.history.slots")
               td.join(',')
