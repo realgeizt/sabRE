@@ -40,7 +40,7 @@ app.locals =
 
 # index route
 app.get '/', (req, res) ->
-  res.render 'index'
+  res.render 'index', {authRequired: settings.authRequired}
 
 # authentication route
 app.post '/login', auth.authUser, (req, res) ->
@@ -53,13 +53,15 @@ app.post '/nzb', auth.authUser, (req, res) ->
 
   logger.info 'user "' + req.user + '" queued "' + req.body.nzbname + '"'
 
-  filename = path.join(settings.nzbUploadDir + path.basename(req.body.nzbname))
+  filename = sabnzbd.getTempNZBName()
+  nzbname = sabnzbd.getNZBName req.body.nzbname
+
   fs.writeFileSync filename, req.body.nzbdata
 
-  sabnzbd.queueNZBFile filename, req.user, (nzbName, queueRes) ->
+  sabnzbd.queueNZBFile filename, nzbname, req.user, (queueRes) ->
     fs.unlink filename
     if queueRes
-      sabnzbd.addUserNZB req.user, nzbName, req.body.flac2mp3
+      sabnzbd.addUserNZB req.user, nzbname, req.body.flac2mp3
       res.json nzb: true
     else
       res.send 500
@@ -71,9 +73,11 @@ app.post '/nzburl', auth.authUser, (req, res) ->
 
   logger.info 'user "' + req.user + '" queued URL "' + req.body.nzburl + '"'
 
-  sabnzbd.queueNZBUrl req.body.nzburl, req.user, (nzbName, queueRes) ->
+  nzbname = sabnzbd.getNZBName req.body.nzburl
+
+  sabnzbd.queueNZBUrl req.body.nzburl, nzbname, req.user, (queueRes) ->
     if queueRes
-      sabnzbd.addUserNZB req.user, nzbName, req.body.flac2mp3
+      sabnzbd.addUserNZB req.user, nzbname, req.body.flac2mp3
       res.json nzb: true
     else
       res.send 500
@@ -105,7 +109,7 @@ app.post '/sabdata', auth.authUser, (req, res) ->
     # if a user should only see data he enqueued, remove other data here
     if settings.hideOtherUsersData
       if data.queue.slots
-        data.queue.slots = _.filter data.queue.slots, (s) -> s.user is req.user
+        data.queue.slots = _.filter data.queue.slots, (s) -> s.user is req.user or s.user is '__:ALL:__'
       if data.history.slots
         data.history.slots = _.filter data.history.slots, (s) -> s.user is req.user
 
@@ -122,7 +126,15 @@ app.post '/sabdata', auth.authUser, (req, res) ->
   res.json data
 
 # route to download a file
-app.get '/downloads/:filename', auth.authUser, (req, res) ->
+if settings.authRequired and settings.downloadAuthRequired
+  app.get '/downloads/:filename', auth.authUser, (req, res) ->
+    return downloadFile req, res
+else
+  app.get '/downloads/:filename', (req, res) ->
+    req.user = 'anonymous'
+    return downloadFile req, res
+
+downloadFile = (req, res) ->
   if not settings.sabreDownloadsEnabled
     return res.send 404
 
@@ -159,6 +171,7 @@ app.get '/downloads/:filename', auth.authUser, (req, res) ->
         return res.send 500
 
     res.on 'finish', () ->
+      logger.info 'user "' + req.user + '" finished download of "' + req.params.filename + '"'
       userNZBs = functions.getUserNZBs()
       nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
       if nzb
@@ -199,7 +212,8 @@ if settings.loaded
   setInterval () ->
     functions.writePasses _.filter(functions.getPasses(), (p) -> p.time > new Date().getTime() - 604800000)
     functions.writeTarContents _.filter(functions.getTarContents(), (c) -> fs.existsSync(settings.downloadDir + c.filename))
-    functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
+    if settings.downloadExpireDays > 0
+      functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
   , 86400
 else
   settings.setup()
