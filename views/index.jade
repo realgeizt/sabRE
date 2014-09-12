@@ -101,7 +101,8 @@ block content
               th(style='width: 10%;') Time left
             tr(ng-repeat="slot in sabdata.queue.slots")
               td
-                i(ng-show='slot.status == "Downloading" || slot.status == "Fetching"' style='color: #078f00').fa.fa-download
+                i(ng-show='slot.status == "Fetching"').fa.fa-plus
+                i(ng-show='slot.status == "Downloading"' style='color: #078f00').fa.fa-download
                 i(ng-show='slot.status == "Queued"').fa.fa-bars
                 i(ng-show='slot.status == "Paused"').fa.fa-pause
               td

@@ -11,9 +11,11 @@ html(lang='de-de', ng-app='webapp')
     link(rel='stylesheet', href='/foundation-essentials-5.2.2/css/foundation.css')
     link(rel='stylesheet', href='/css/font-awesome.min.css')
 
+    script(type='text/javascript').
+      authRequired = !{authRequired};
+
     include includes/scripts
     script(src='/js/app/app.js')
-
   body(ng-controller='UICtrl')
     div(id="overlay", ng-show="appbusy")
     div(id="spinner" ng-show="appbusy") Loading...

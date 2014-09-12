@@ -31,6 +31,7 @@ app.controller 'UICtrl', ($scope, $rootScope, $http) ->
   $scope.fileapi = true if window.File && window.FileReader && window.FileList && window.Blob
   $scope.sabdata = { running: true }
   $scope.appbusy = true
+  $scope.authRequired = authRequired
 
   # try logging in with supplied user/pass
   $scope.login = (user, pass) ->
@@ -48,6 +49,9 @@ app.controller 'UICtrl', ($scope, $rootScope, $http) ->
       $scope.auth = { ok: false, err: true, loggingin: false}
       $scope.appbusy = false
       delCookie 'login'
+
+  if not $scope.authRequired
+    $scope.login 'anonymous', ''
 
   # called to upload nzb file
   $scope.sendNZB = ->
