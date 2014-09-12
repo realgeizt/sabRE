@@ -25,11 +25,13 @@ class Settings
 
     # configuration of sabRE
     { stage: 2, name: 'port', desc: 'the port sabRE listens on.', default: 3000, type: 'int' }
-    { stage: 2, name: 'useCurl', desc: 'check urls with curl before enqueueing to SABnzbd?', default: false, type: 'bool' }
+    { stage: 2, name: 'useCurl', desc: 'when enabled sabRE will check urls using curl before enqueueing them. additionally sabRE will check whether the nzb contains valid xml using libxmljs. this feature requires the application \'curl\' to be installed.', default: false, type: 'bool' }
+    { stage: 2, name: 'authRequired', desc: 'when enabled, authentication is required to use sabRE.', default: true, type: 'bool' }
+    { stage: 2, name: 'downloadAuthRequired', desc: 'when enabled, authentication is required to download files. when disabled everyone can download files using the url to the file. if authRequired was set to false this setting has no effect.', default: true, type: 'bool' }
     { stage: 2, name: 'hideOtherUsersData', desc: 'when enabled, users can only see stuff they enqueued. files from other users are hidden.', default: false, type: 'bool' }
     { stage: 2, name: 'downloadExpireDays', desc: 'when set to a value >0 downloads will be hidden when configured number of days have elapsed since the completion of the download.', default: 0, type: 'int' }
     { stage: 2, name: 'noPostProcess', desc: 'when this is enabled no postprocessing (creation of tar archive) will take place. instead sabRE tries to set the category of the download to the currently logged in user\'s name so you can set up shares on the server to let users download the files directly. when enabling this, don\'t forget to configure categories in SABnzbd, one for each user. otherwise files will be downloaded to the regular download dir without placing them in separate directories for each user. enabled postprocessing requires sabRE to run on the same machine as SABnzbd.', default: false, type: 'bool' }
-    { stage: 2, name: 'noFLAC2MP3', desc: 'when this is enabled the option to convert downloaded .flac files to .mp3 files will not be provided in the user interface. this feature requires the applications "flac", "metaflac" and "lame".', default: false, type: 'bool' }
+    { stage: 2, name: 'noFLAC2MP3', desc: 'when this is enabled the option to convert downloaded .flac files to .mp3 files will not be provided in the user interface. this feature requires the applications \'flac\', \'metaflac\' and \'lame\' to be installed.', default: false, type: 'bool' }
     { stage: 2, name: 'sabreDownloadsEnabled', desc: 'when enabled sabRE allows users to download files from the webinterface. this only works if you did not disable postprocessing before.', default: true, type: 'bool' }
     { stage: 2, name: 'logFile', desc: 'file where sabRE logs into.', default: '../data/log.json', type: 'file', mustExist: false, wizardEnabled: false }
     { stage: 2, name: 'userFile', desc: 'sabRE\'s user/password "database".', default: '../data/users.json', type: 'file', wizardEnabled: false }
@@ -38,7 +40,8 @@ class Settings
     { stage: 2, name: 'postProcessPasswordsFile', desc: 'sabRE\'s password database (NOT SABnzb\'s) to extract passworded rar files. must point to the same file as PASSWORDS_FILE in settings.py from the postprocessor.', default: '../data/passes.json', type: 'file', mustExist: false, wizardEnabled: false }
     { stage: 2, name: 'tarContentsFile', desc: 'file that stores contents of .tar files created by postprocessing so the contents of files can be displayed in sabRE. must point to the same file as TAR_CONTENTS_FILE in settings.py from the postprocessor.', default: '../data/tarcontents.json', type: 'file', mustExist: false, wizardEnabled: false }
     { stage: 2, name: 'userNZBsFile', desc: 'file that associates user accounts with downloaded nzbs. this file is important when every user should only see his own enqueued files (hideOtherUsersData == true).', default: '../data/usernzbs.json', type: 'file', mustExist: false, wizardEnabled: false }
-    { stage: 2, name: 'sabHideQueue', default: ['Trying to fetch', ], type: 'list', wizardEnabled: false }
+    { stage: 2, name: 'sabNZBDownload', default: '^Trying to fetch NZB from (?P<url>.*)', type: 'string', wizardEnabled: false }
+    { stage: 2, name: 'sabNZBDownloadWait', default: '^WAIT (?P<sec>.*) sec / Trying to fetch NZB from (?P<url>.*)', type: 'string', wizardEnabled: false }
     { stage: 2, name: 'remoteAuthEnabled', 'desc': 'make use of user authentication using a remote url?', default: false, type: 'bool' }
     { stage: 2, name: 'remoteAuthHost', desc: 'host where remote authentication is running.', default: '127.0.0.1', type: 'string' }
     { stage: 2, name: 'remoteAuthPort', desc: 'port where remote authentication is listening on.', default: 80, type: 'int' }
@@ -116,7 +119,7 @@ class Settings
         return parseInt value
       when 'bool'
         if value.toLowerCase() is 'true' or value.toLowerCase() is '1' then return true
-        if value.toLowerCase() is 'false' or value.toLowerCase() is '0' then return true
+        if value.toLowerCase() is 'false' or value.toLowerCase() is '0' then return false
       when 'list'
         throw 'not implemented'
     return null
