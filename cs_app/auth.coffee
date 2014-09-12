@@ -13,8 +13,12 @@ class Auth
 
   # middleware to authenticate a user.
   # if a user defined in settings.userFile is found everything is okay, otherwise the alternative
-  # authentication strategy will be used.
+  # authentication strategy will be used if enabled.
   @authUser = (req, res, next) ->
+    if not settings.authRequired
+      req.user = 'anonymous'
+      return next()
+
     users = functions.getUsers()
 
     if req.body? and req.body.user? and req.body.pass?
