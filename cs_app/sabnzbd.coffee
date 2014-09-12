@@ -4,30 +4,55 @@ fs = require 'fs'
 http = require 'http'
 _ = require 'underscore'
 async = require 'async'
+crypto = require 'crypto'
+libxmljs = require 'libxmljs'
+child_process = require 'child_process'
+XRegExp = require('xregexp').XRegExp
 
 # project dependencies
 settings = require './settings'
 logger = require './logger'
 functions = require './functions'
 
-if settings.useCurl
-  exec = require('child_process').exec
-
 class SABnzbd
+  @getTempNZBName = () ->
+    return settings.nzbUploadDir + 'nzb' + crypto.randomBytes(4).readUInt32LE(0) + '.nzb'
   @addUserNZB = (username, nzbname, flac2mp3) ->
     userNZBs = functions.getUserNZBs()
     userNZBs.push {user: username, nzb: nzbname, time: new Date().getTime(), flac2mp3: flac2mp3, downloads: 0}
     functions.writeUserNZBs(userNZBs)
   @getNZBName = (name) ->
     nzbname = path.basename name
-    nzbname = nzbname.replace(/[\/:*?"<>| ]/g, '_');
-    if nzbname.length > 70
-      nzbname = nzbname.substring 0, 70
+
     if _.endsWith nzbname.toLowerCase(), '.nzb'
       nzbname = nzbname.substring(0, nzbname.length - 4)
     if _.endsWith nzbname.toLowerCase(), '.par2'
       nzbname = nzbname.substring(0, nzbname.length - 5)
-    return nzbname
+
+    nzbname = nzbname.replace(/[\/:*?"<>| ]/g, '_').trim()
+    # "-" is included because otherwise postprocessing does not work as it should.
+    # subprocess.popen won't quote the filename and when it starts with "-" tar
+    # interprets it as arguments and fails...
+    nzbname = nzbname.replace(/^[.\-_ ]+|[.\-_ ]+$/g, '')
+
+    if nzbname.length > 70
+      nzbname = nzbname.substring 0, 70
+
+    if nzbname.length == 0
+      nzbname = 'Download'
+
+    append = ''
+    userNZBs = functions.getUserNZBs()
+    while _.find(userNZBs, (n) -> n.nzb is nzbname + append or n.nzb is nzbname + '.' + append)
+      if append is ''
+        append = 1
+      else
+        append += 1
+
+    if append is ''
+      return nzbname
+    else
+      return nzbname + '.' + append
   @getSabData = (type, cb) ->
     if type is 'queue'
       p = '/api?mode=queue&start=0&limit=0&output=json&apikey=' + settings.sabApiKey
@@ -82,10 +107,30 @@ class SABnzbd
         if r[0].slots?
           # hide specific slots by name
           r[0].slots = _.filter r[0].slots, (s) -> !(_.find settings.sabHideQueue, (q) -> s.filename.substring(0, q.length) is q)
+
+          # change title of nzb's sabnzb tries to fetch
+          r[0].slots = _.map r[0].slots, (s) ->
+            regex = XRegExp(settings.sabNZBDownload, 'i')
+            match = XRegExp.exec(s['filename'], regex)
+            if not match?
+              regex = XRegExp(settings.sabNZBDownloadWait, 'i')
+              match = XRegExp.exec(s['filename'], regex)
+            if match? and match.url? and match.sec?
+              match.url = path.basename match.url if path.basename(match.url).length > 0
+              s['filename'] = _.sprintf 'Trying to fetch (waiting %s seconds) "%s"', match.sec, path.basename match.url
+              s.status = 'Fetching'
+            else if match? and match.url?
+              match.url = path.basename match.url if path.basename(match.url).length > 0
+              s['filename'] = _.sprintf 'Trying to fetch "%s"', path.basename match.url
+              s.status = 'Fetching'
+            return s
+
           # append responsible username to slot if needed
           if settings.hideOtherUsersData
             _.each r[0].slots, (s) ->
               s.user = _.find(userNZBs, (u) -> u.nzb is s.filename).user if _.find(userNZBs, (u) -> u.nzb is s.filename)?
+              if not s.user?
+                s.user = '__:ALL:__'
 
       if r[1]? and r[1].slots?
         # only allow one item per name
@@ -159,8 +204,12 @@ class SABnzbd
             s.size = null
 
       cb {running: run, queue: r[0], history: r[1], status: s, statusint: s2}
-  @queueNZBFile = (filename, username, cb) ->
-    nzbname = @getNZBName filename
+  @queueNZBFile = (filename, nzbname, username, cb) ->
+    data = fs.readFileSync(filename)
+    try
+      libxmljs.parseXmlString data
+    catch
+      return cb false
 
     if settings.noPostProcess
       p = '/api?mode=addlocalfile&name=' + filename + '&nzbname=' + nzbname + '&cat=' + username + '&pp=3&apikey=' + settings.sabApiKey
@@ -173,16 +222,14 @@ class SABnzbd
         str += data
       response.on 'end', () ->
         if str.trim() is 'ok'
-          cb nzbname, true
+          cb true
         else
-          cb nzbname, false
+          cb false
     sabReq.on 'error', (err) ->
-      cb '', false
+      cb false
     sabReq.end()
-  @queueNZBUrl = (url, username, cb) ->
+  @queueNZBUrl = (url, nzbname, username, cb) ->
     realQueueNZBLink = (url, cb) ->
-      nzbname = SABnzbd.getNZBName url
-
       if settings.noPostProcess
         p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&cat=' + username + '&pp=3&apikey=' + settings.sabApiKey
       else
@@ -194,18 +241,22 @@ class SABnzbd
           str += data
         response.on 'end', () ->
           if str.trim() is 'ok'
-            cb nzbname, true
+            cb true
           else
-            cb '', false
+            cb false
       sabReq.on 'error', (err) ->
-        cb '', false
+        cb false
       sabReq.end()
 
     if settings.useCurl
-      exec 'curl -k ' + url, {maxBuffer: 1024 * 1024 * 30}, (err, stdout, stderr) ->
-        if err || stdout.trim() is ''
-          return cb '', false
-        realQueueNZBLink url, cb
+      filename = @getTempNZBName()
+      child_process.execFile 'curl', ['-k', '-o', filename, url], {maxBuffer: 1024 * 1024 * 30}, (err, stdout, stderr) =>
+        if err || not fs.existsSync filename || fs.statSync(filename)['size'] is 0
+          return cb false
+
+        @queueNZBFile filename, nzbname, username, (queueRes) ->
+          fs.unlink filename
+          return cb queueRes
     else
       realQueueNZBLink url, cb
 
