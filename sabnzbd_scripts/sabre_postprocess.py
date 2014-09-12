@@ -178,7 +178,7 @@ class PostProcessor:
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
 
         # start the thread that sends signals to tar
-        thread = SignalSender() 
+        thread = SignalSender()
         thread.pid = proc.pid
         thread.start()
         
@@ -192,6 +192,7 @@ class PostProcessor:
                     self.writeprogress('tar', percent)
                     lastpercent = percent
             except Exception, e:
+                print traceback.format_exc(e)
                 return 1
         proc.wait()
         if proc.returncode != 0:

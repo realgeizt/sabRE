@@ -59,7 +59,7 @@ class unrarer:
     # tries to extract a rar archive using a supplied password
     def processfile(self, fn, pwd):
         ok = False
-        cmd = ['unrar', 'e', '-o-', '-p' + pwd, fn, ]
+        cmd = ['unrar', 'x', '-o-', '-p' + pwd, fn, ]
         lastprogress = -1
         res = 0
         p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
