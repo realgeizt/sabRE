@@ -213,7 +213,7 @@ if settings.loaded
     functions.writePasses _.filter(functions.getPasses(), (p) -> p.time > new Date().getTime() - 604800000)
     functions.writeTarContents _.filter(functions.getTarContents(), (c) -> fs.existsSync(settings.downloadDir + c.filename))
     if settings.downloadExpireDays > 0
-      functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - 604800000)
+      functions.writeUserNZBs _.filter(functions.getUserNZBs(), (n) -> n.time > new Date().getTime() - (settings.downloadExpireDays * 86400000))
   , 86400
 else
   settings.setup()
