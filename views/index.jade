@@ -42,12 +42,13 @@ block content
               span(ng-show='sabdata.status' style='padding-left: 8px;') {{sabdata.status}}
               span(ng-show='!sabdata.status' style='padding-left: 8px;') sabRE is not running
           .row(ng-show='sabdata.running')
-            .small-4.columns.text-left
+            .small-3.columns.text-left
               i.fa.fa-check-circle(ng-show='sabdata.statusint == 0' style='color: #078f00;')
               i.fa.fa-exclamation-circle(ng-show='sabdata.statusint == 1' style='color: #c30012;')
               span(style='padding-left: 8px;') {{sabdata.status}}
-            .small-4.columns.text-center Speed: {{sabdata.queue.speed}}
-            .small-4.columns.text-right Free space: {{sabdata.queue.diskspace1}} GB
+            .small-3.columns.text-center In Speed: {{sabdata.queue.speed}}
+            .small-3.columns.text-center Out Speed: {{sabdata.outSpeed}}
+            .small-3.columns.text-right Free space: {{sabdata.queue.diskspace1}} GB
           br
           hr(style='margin: 0px 0px 0px 0px;')
 

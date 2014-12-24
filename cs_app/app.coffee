@@ -26,6 +26,7 @@ app = express()
 
 # working data for status updates to clients
 sabData = {queue: null, history: null}
+speeds = []
 
 # express config
 app.set 'view engine', 'jade'
@@ -170,7 +171,14 @@ downloadFile = (req, res) ->
       catch e
         return res.send 500
 
+    speedObj = {res: res, startTime: new Date().getTime(), lastTime: new Date().getTime(), transferred: 0, speed: 0}
+    speeds.push speedObj
+
+    res.on 'close', () ->
+      speeds = _.without speeds, speedObj
+
     res.on 'finish', () ->
+      speeds = _.without speeds, speedObj
       logger.info 'user "' + req.user + '" finished download of "' + req.params.filename + '"'
       userNZBs = functions.getUserNZBs()
       nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
@@ -187,7 +195,15 @@ downloadFile = (req, res) ->
       res.writeHead 200, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
 
     stream = fs.createReadStream filename, { bufferSize: 64 * 1024, start: start, end: end }
-    stream.pipe res
+
+    stream.on('data', (data) ->
+      speedObj.lastTime = new Date().getTime()
+      speedObj.transferred += data.length
+      if speedObj.lastTime > speedObj.startTime + 1000
+        speedObj.speed = speedObj.transferred / 1024
+        speedObj.transferred = 0
+        speedObj.startTime = speedObj.lastTime
+    ).pipe res 
   else
     res.send 404
 
@@ -203,6 +219,14 @@ if settings.loaded
   loadDataInterval = () ->
     setTimeout () ->
       sabnzbd.updateSabData (data) ->
+        data.outSpeed = _.reduce speeds, (memo, s) ->
+          memo += s.speed
+        , 0
+        if data.outSpeed >= 1024
+          data.outSpeed = _.numberFormat((data.outSpeed / 1024), 2) + ' MB/s'
+        else
+          data.outSpeed = _.numberFormat(data.outSpeed, 2) + ' KB/s'
+
         sabData = data
         loadDataInterval()
     , 1000
