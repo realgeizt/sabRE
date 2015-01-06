@@ -39,21 +39,25 @@ class unrarer:
         
         fsplit = f[1].lower().split('.')
         pattern = ''
+        arcname = ''
         if len(fsplit) > 2 and len(fsplit[-2]) > 4 and fsplit[-2][:4] == 'part':
             pattern = '^(.*)\.part(\d+)\.rar$'
+            arcname = os.path.splitext(os.path.splitext(os.path.basename(f[1]))[0])[0]
         elif len(fsplit) > 1 and not (len(fsplit[-2]) > 4 and fsplit[-2][:4] == 'part'):
             pattern = '^(.*)\.r(\d+)$'
+            arcname = os.path.splitext(os.path.basename(f[1]))[0]
         
-        r = re.compile(pattern, re.IGNORECASE)
-        
-        for root, subFolders, files in os.walk(f[0]):
-            for file in files:
-                m = r.search(file)
-                if m:
-                    ret.append(file)
+        if pattern != '':
+            r = re.compile(pattern, re.IGNORECASE)
+            
+            for root, subFolders, files in os.walk(f[0]):
+                for file in files:
+                    m = r.search(file)
+                    if m and os.path.basename(file) != '' and os.path.basename(file).startswith(arcname):
+                        ret.append(file)
 
-        if len(ret) > 0 and not f[1] in ret:
-            ret.append(f[1])
+            if len(ret) > 0 and not f[1] in ret:
+                ret.append(f[1])
         
         return ret
     # tries to extract a rar archive using a supplied password
@@ -96,7 +100,7 @@ class unrarer:
     def getfiles(self, path):
         res = []
         
-        r = re.compile('^(.*)\.part(\d*)1\.rar$', re.IGNORECASE)
+        r = re.compile('^(.*)\.part(0*)1\.rar$', re.IGNORECASE)
         r2 = re.compile('^(.*)\.rar$', re.IGNORECASE)
         
         for root, subFolders, files in os.walk(path):
@@ -156,8 +160,6 @@ class unrarer:
                         break
                 if passfound != '':
                     print '  pass found, files extracted'
-                    self.run(dir)
-                    return
                 else:
                     if notrararchive:
                         print '  %s is no rar archive' % (f[1])
