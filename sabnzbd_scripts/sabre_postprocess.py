@@ -98,13 +98,16 @@ class PostProcessor:
     def getusernzb(self, nzb, prop):
         try:
             json_data = open(settings.USER_NZBS_FILE, 'r')
-            data = json.load(json_data)
-            for val in data:
-                try:
-                    if val['nzb'] == nzb:
-                        return val[prop]
-                except:
-                    pass
+            try:
+                data = json.load(json_data)
+                for val in data:
+                    try:
+                        if val['nzb'] == nzb:
+                            return val[prop]
+                    except:
+                        pass
+            except:
+                pass
             json_data.close()
         except:
             pass
