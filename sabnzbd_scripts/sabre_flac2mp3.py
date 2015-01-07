@@ -6,61 +6,42 @@ import shutil
 
 class flac2mp3:
     def __init__(self, path):
-        self.tags = []
+        self.tags = None
         self.path = path
-        self.wavsubdir = os.path.join(self.path, 'wav')
-        self.mp3subdir = os.path.join(self.path, 'mp3')
-    def createsubdir(self, filetype):
+    def decode(self, infile, outfile):
+        self.tags = None
+
+        cmd = ['flac', '-d', infile, '-o', outfile]
         try:
-            if filetype == 'wav' and not os.path.exists(self.wavsubdir):
-                os.mkdir(self.wavsubdir, 0777)
-            elif filetype == 'mp3' and not os.path.exists(self.mp3subdir):
-                os.mkdir(self.mp3subdir, 0777)
-            return True
+            proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except:
+            print 'could not execute flac - is it installed?'
             return False
-    def decode(self):
-        listing = os.listdir(self.path)
-        for item in listing:
-            if item.endswith('.flac'):
-                cmd = ['flac', '-d', os.path.join(self.path, item), '-o', os.path.join(self.wavsubdir, item[:-5])]
-                try:
-                    proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                except:
-                    print 'could not execute flac - is it installed?'
-                    return False
-                proc.wait()
-                if proc.returncode != 0:
-                    return False
+        proc.wait()
+        if proc.returncode != 0:
+            return False
 
-                obj = {'name': os.path.splitext(item)[0], 'artist': '', 'title': '', 'album': '', 'genre': '', 'track': '0', 'date': ''}
+        self.tags = {'artist': '', 'title': '', 'album': '', 'genre': '', 'track': '0', 'date': ''}
 
-                obj['artist'] = self.getflactag(os.path.join(self.path, item), 'ARTIST')
-                obj['title'] = self.getflactag(os.path.join(self.path, item), 'TITLE')
-                obj['album'] = self.getflactag(os.path.join(self.path, item), 'ALBUM')
-                obj['genre'] = self.getflactag(os.path.join(self.path, item), 'GENRE')
-                obj['track'] = self.getflactag(os.path.join(self.path, item), 'TRACKNUMBER')
-                obj['date'] = self.getflactag(os.path.join(self.path, item), 'DATE')
-                self.tags.append(obj)
+        self.tags['artist'] = self.getflactag(infile, 'ARTIST')
+        self.tags['title'] = self.getflactag(infile, 'TITLE')
+        self.tags['album'] = self.getflactag(infile, 'ALBUM')
+        self.tags['genre'] = self.getflactag(infile, 'GENRE')
+        self.tags['track'] = self.getflactag(infile, 'TRACKNUMBER')
+        self.tags['date'] = self.getflactag(infile, 'DATE')
+        
         return True
-    def encodemp3(self):
-        listing = os.listdir(self.wavsubdir)
-        for item in listing:
-            obj = {'artist': '', 'title': '', 'album': '', 'genre': '', 'track': '0', 'date': ''}
-            for o in self.tags:
-                if o['name'] == os.path.splitext(item)[0]:
-                    obj = o
-                    break
-            cmd = ['lame', '--preset', 'extreme', '--add-id3v2', '--tt', obj['title'], '--tn', obj['track'], '--ta', obj['artist'], '--tl', obj['album'], '--tg', obj['genre'], '--ty', obj['date'], os.path.join(self.wavsubdir, item), '%s%s' % (os.path.join(self.mp3subdir, item), '.mp3')]
-            try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except:
-                print 'could execute lame - is it installed?'
-                return False
-            out, err = proc.communicate()
-            proc.wait()
-            if proc.returncode != 0:
-                return False
+    def encodemp3(self, infile, outfile):
+        cmd = ['lame', '--preset', 'extreme', '--add-id3v2', '--tt', self.tags['title'], '--tn', self.tags['track'], '--ta', self.tags['artist'], '--tl', self.tags['album'], '--tg', self.tags['genre'], '--ty', self.tags['date'], infile, outfile]
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except:
+            print 'could execute lame - is it installed?'
+            return False
+        out, err = proc.communicate()
+        proc.wait()
+        if proc.returncode != 0:
+            return False
         return True
     def getflactag(self, filename, tag):
         try:
@@ -75,31 +56,37 @@ class flac2mp3:
                 return out[pos + 1:].strip()
         return ''
     def run(self):
-        try:
-            if not self.createsubdir('wav'):
-                print 'could not create wav dir'
-                return False
-            if not self.createsubdir('mp3'):
-                print 'Could not create mp3 dir'
-                return False
-            if not self.decode():
-                print 'error while decoding flac files'
-                return False
-            if not self.encodemp3():
-                print 'error while encoding mp3 files'
-                return False
-
-            # move mp3s to original dir
-            listing = os.listdir(self.mp3subdir)
-            for item in listing:
-                if item.lower().endswith('.mp3'):
-                    shutil.move(os.path.join(self.mp3subdir, item), os.path.join(self.path, item))
-            # remove flac files
-            listing = os.listdir(self.path)
-            for item in listing:
-                if item.lower().endswith('.flac'):
-                    os.remove(os.path.join(self.path, item))
-        finally:
-            subprocess.Popen(["rm", "-rf", self.wavsubdir, ]).wait()
-            subprocess.Popen(["rm", "-rf", self.mp3subdir, ]).wait()
+        for root, subFolders, files in os.walk(self.path):
+            for file in files:
+                if os.path.splitext(os.path.basename(file))[1].lower() == '.flac':
+                    orgfile = os.path.join(root, file)
+                    wavefile = os.path.join(root, os.path.splitext(os.path.basename(file))[0] + '.wav')
+                    mp3file = os.path.join(root, os.path.splitext(os.path.basename(file))[0] + '.mp3')
+                    if self.decode(orgfile, wavefile):
+                        if not self.encodemp3(wavefile, mp3file):
+                            print 'error encoding %s' % os.path.splitext(os.path.basename(file))[0] + '.wav'
+                            try:
+                                os.remove(wavefile)
+                            except:
+                                pass
+                            try:
+                                os.remove(mp3file)
+                            except:
+                                pass
+                        else:
+                            print 'encoded %s' % file
+                            try:
+                                os.remove(orgfile)
+                            except:
+                                pass
+                            try:
+                                os.remove(wavefile)
+                            except:
+                                pass
+                    else:
+                        print 'error decoding %s' % file
+                        try:
+                            os.remove(wavefile)
+                        except:
+                            pass
         return True
