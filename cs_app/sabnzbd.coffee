@@ -203,6 +203,10 @@ class SABnzbd
           else if s.status is 'Failed'
             s.size = null
 
+        # remove failed items at the end of history
+        while r[1].slots.length > 0 and r[1].slots[r[1].slots.length - 1].status is 'Failed'
+          r[1].slots = _.without r[1].slots, r[1].slots[r[1].slots.length - 1]
+
       cb {running: run, queue: r[0], history: r[1], status: s, statusint: s2}
   @queueNZBFile = (filename, nzbname, username, cb) ->
     data = fs.readFileSync(filename)

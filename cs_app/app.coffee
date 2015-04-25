@@ -132,7 +132,10 @@ if settings.authRequired and settings.downloadAuthRequired
     return downloadFile req, res
 else
   app.get '/downloads/:filename', (req, res) ->
-    req.user = 'anonymous'
+    if req.body.user?
+      req.user = req.body.user
+    else
+      req.user = 'anonymous'
     return downloadFile req, res
 
 downloadFile = (req, res) ->
@@ -203,7 +206,7 @@ downloadFile = (req, res) ->
         speedObj.speed = speedObj.transferred / 1024
         speedObj.transferred = 0
         speedObj.startTime = speedObj.lastTime
-    ).pipe res 
+    ).pipe res
   else
     res.send 404
 
@@ -228,6 +231,7 @@ if settings.loaded
           data.outSpeed = _.numberFormat(data.outSpeed, 2) + ' KB/s'
 
         sabData = data
+
         loadDataInterval()
     , 1000
   loadDataInterval()
