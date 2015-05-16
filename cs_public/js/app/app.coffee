@@ -1,6 +1,6 @@
 app = angular.module 'webapp', []
 
-app.directive 'inputfile', -> 
+app.directive 'inputfile', ->
   restrict: 'E'
   template: "<div><input type='file'></input></div>"
   replace: true
@@ -101,6 +101,9 @@ app.controller 'UICtrl', ($scope, $rootScope, $http) ->
     ).error((data, status, headers, config) ->
       $scope.sendstate = {err: true, success: false, sending: false}
     )
+
+  $scope.showNFO = (nfo) ->
+    alert(nfo)
 
   # starts a timer that refreshes the view
   refresh = ->

@@ -16,7 +16,7 @@ from sabre_unrar import unrarer
 from sabre_flac2mp3 import flac2mp3
 
 # this thread sends SIGUSR1 to tar so that it outputs its progress
-class SignalSender(threading.Thread): 
+class SignalSender(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.pid = -1
@@ -46,10 +46,17 @@ class PostProcessor:
     # gets a list of files recursively
     def getfiles(self, startpath = '.'):
         res = []
+        nfores = []
         for dirpath, dirnames, filenames in os.walk(startpath):
             for f in filenames:
                 res.append(f.decode('utf-8', 'ignore'))
-        return res
+            for f in list(filter(lambda x: x.lower().strip().endswith('.nfo'), filenames)):
+                content = ''
+                with open(os.path.join(dirpath, f), 'r') as nfofile:
+                    content = nfofile.read()
+                if content != '':
+                    nfores.append([f.decode('utf-8', 'ignore'), content.decode('utf-8', 'ignore'), ])
+        return res, nfores
     # writes unrar/tar progress to file that is read by sabRE
     def writeprogress(self, type, progress):
         try:
@@ -89,7 +96,8 @@ class PostProcessor:
                 exists = True
                 break
         if not exists:
-            data.append({'filename': self.downloadFile + '.tar', 'files': self.getfiles(self.downloadDir + self.downloadFile)})
+            files, nfos = self.getfiles(self.downloadDir + self.downloadFile)
+            data.append({'filename': self.downloadFile + '.tar', 'files': files, 'nfos': nfos})
 
         with open(settings.TAR_CONTENTS_FILE, 'w') as outfile:
           json.dump(data, outfile)
@@ -114,7 +122,7 @@ class PostProcessor:
         return None
     def run(self):
         error = False
-        
+
         # get path to downloaded files
         downloadDir = sys.argv[1]
         originalName = sys.argv[3]
@@ -127,11 +135,11 @@ class PostProcessor:
         self.downloadDir = os.path.split(downloadDir)[0]
         if len(self.downloadDir) > 1:
             self.downloadDir += '/'
-        
+
         print 'processing "%s" in directory "%s"' % (self.downloadFile, self.downloadDir)
-        
+
         print 'starting unrar'
-        
+
         # unrar everything
         self.writeprogress('rar', -1)
         try:
@@ -139,28 +147,28 @@ class PostProcessor:
         except Exception, e:
             print 'exception in unrar: ' + traceback.format_exc(e)
             error = True
-        
+
         # change directory
         os.chdir(self.downloadDir)
-        
+
         # delete the tar file before creating it later
         try:
             os.remove(self.downloadFile + '.tar')
         except:
             pass
-        
+
         size = self.getsize(self.downloadDir + self.downloadFile)
         rndImgFile = self.randomword(10) + '.jpg'
-        
+
         # if desired rename windows executables
         if settings.RENAME_WINDOWS_EXECUTABLES:
             self.renameexecutables(self.downloadDir + self.downloadFile)
-        
+
         # if wanted convert flac to mp3
         if self.getusernzb(originalName, 'flac2mp3'):
             print 'converting flac to mp3'
             flac2mp3(self.downloadDir + self.downloadFile).run()
-        
+
         # write contents of soon created tar file to file read by sabRE
         print 'modifying tar content file'
         try:
@@ -184,7 +192,7 @@ class PostProcessor:
         thread = SignalSender()
         thread.pid = proc.pid
         thread.start()
-        
+
         # now watch the output of tar and write it to the progressfile read by sabRE
         lastpercent = 0
         for line in iter(proc.stderr.readline, ''):

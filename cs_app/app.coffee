@@ -122,7 +122,7 @@ app.post '/sabdata', auth.authUser, (req, res) ->
     data.history = _.omit data.history, _.keys(_.omit data.history, 'slots')
     if data.history.slots?
       data.history.slots = _.map data.history.slots, (ss) ->
-        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user', 'downloadable', 'downloads')
+        return _.omit ss, _.keys(_.omit ss, 'status', 'size', 'filelist', 'nfolist', 'fail_message', 'name', 'actionpercent', 'extendedstatus', 'user', 'downloadable', 'downloads')
 
   res.json data
 

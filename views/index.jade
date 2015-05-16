@@ -151,6 +151,8 @@ block content
                 div(title='{{slot.name}}', style='width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;')
                   a(ng-show='slot.status == "Completed" && slot.downloadable', ng-href='/downloads/{{slot.name}}.tar', target='_blank') {{slot.name}}
                   span(ng-show='!(slot.status == "Completed") || !slot.downloadable') {{slot.name}}
+                div(ng-repeat="nfo in slot.nfolist" style='font-size: 9px; line-height: 10px;')
+                  a(ng-click='showNFO(nfo[1])') {{nfo[0]}}
                 div(title='{{slot.filelist.join("\n")}}' ng-show='slot.status == "Completed" && slot.filelist.length <= 5' style='font-size: 9px; line-height: 10px;')
                   | {{slot.filelist.join(', ')}}
                 div(title='{{slot.filelist.join("\n")}}' ng-show='slot.status == "Completed" && slot.filelist.length > 5' style='font-size: 9px; line-height: 10px;')

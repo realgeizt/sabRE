@@ -177,11 +177,13 @@ class SABnzbd
             s.actionpercent = -1
 
           s.filelist = []
+          s.nfolist = []
           if fs.existsSync(settings.downloadDir + s.name + '.tar') and s.status is 'Completed'
             tc = functions.getTarContents()
             tc = _.filter tc, (asdf) -> asdf.filename is s.name + '.tar'
             if tc.length is 1
               s.filelist = tc[0].files
+              s.nfolist = tc[0].nfos
             s.downloadable = settings.sabreDownloadsEnabled
           else
             s.downloadable = false
