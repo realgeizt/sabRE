@@ -174,7 +174,7 @@ downloadFile = (req, res) ->
       catch e
         return res.send 500
 
-    speedObj = {res: res, startTime: new Date().getTime(), lastTime: new Date().getTime(), transferred: 0, speed: 0}
+    speedObj = {res: res, startTime: new Date().getTime(), lastTime: new Date().getTime(), transferred: 0, speed: 0, lastPart: end == filesize - 1}
     speeds.push speedObj
 
     res.on 'close', () ->
@@ -182,15 +182,18 @@ downloadFile = (req, res) ->
 
     res.on 'finish', () ->
       speeds = _.without speeds, speedObj
-      logger.info 'user "' + req.user + '" finished download of "' + req.params.filename + '"'
-      userNZBs = functions.getUserNZBs()
-      nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
-      if nzb
-        if nzb.downloads?
-          nzb.downloads += 1
-        else
-          nzb.downloads = 1
-        functions.writeUserNZBs(userNZBs)
+      if speedObj.lastPart and ((end - start > 2000000 and filesize > 2000000) or filesize < 2000000)
+        logger.info 'user "' + req.user + '" finished download of "' + req.params.filename + '"'
+        userNZBs = functions.getUserNZBs()
+        nzb = _.find(userNZBs, (n) -> n.nzb + '.tar' is req.params.filename)
+        if nzb
+          if nzb.downloads?
+            nzb.downloads += 1
+          else
+            nzb.downloads = 1
+          functions.writeUserNZBs(userNZBs)
+      else
+        logger.info 'user "' + req.user + '" finished partial download of "' + req.params.filename + '"'
 
     if partial
       res.writeHead 206, { 'Content-Length': end - start + 1, 'Content-Range': 'bytes ' + start + '-' + end + '/' + filesize }
