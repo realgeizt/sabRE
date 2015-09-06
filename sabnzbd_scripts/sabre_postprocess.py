@@ -204,7 +204,7 @@ class PostProcessor:
                     lastpercent = percent
             except Exception, e:
                 print traceback.format_exc(e)
-                return 1
+                #return 1
         proc.wait()
         if proc.returncode != 0:
             error = True

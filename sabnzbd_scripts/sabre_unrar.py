@@ -17,7 +17,7 @@ class unrarer:
             json_data = open(settings.PASSWORDS_FILE, 'r')
             data = json.load(json_data)
             for p in data:
-                ret.append(p['pass'])
+                ret.append(str(p['pass']))
             json_data.close()
             return ret
         except:
