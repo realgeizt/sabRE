@@ -144,6 +144,7 @@ class PostProcessor:
         self.writeprogress('rar', -1)
         try:
             unrarer().run(self.downloadDir + self.downloadFile)
+            print 'unrar finished'
         except Exception, e:
             print 'exception in unrar: ' + traceback.format_exc(e)
             error = True
@@ -196,6 +197,7 @@ class PostProcessor:
         # now watch the output of tar and write it to the progressfile read by sabRE
         lastpercent = 0
         for line in iter(proc.stderr.readline, ''):
+            print line
             l = line.split(' ')
             try:
                 percent = int((float(l[3]) / size) * 100)
@@ -203,10 +205,11 @@ class PostProcessor:
                     self.writeprogress('tar', percent)
                     lastpercent = percent
             except Exception, e:
+                print 'could not parse tar output: "%s"' % line
                 print traceback.format_exc(e)
-                #return 1
         proc.wait()
         if proc.returncode != 0:
+            print 'tar failed with returncode %d' % proc.returncode
             error = True
 
         # allow access to everybody...
