@@ -239,7 +239,7 @@ class SABnzbd
       if settings.noPostProcess
         p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&cat=' + username + '&pp=3&apikey=' + settings.sabApiKey
       else
-        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=3&script=sabre_postprocess.py&apikey=' + settings.sabApiKey
+        p = '/api?mode=addurl&name=' + url + '&nzbname=' + nzbname + '&pp=1&script=sabre_postprocess.py&apikey=' + settings.sabApiKey
 
       sabReq = http.request {host: settings.sabHost, port: settings.sabPort, path: encodeURI(p)}, (response) ->
         str = ''
