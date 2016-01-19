@@ -17,7 +17,8 @@ class unrarer:
             json_data = open(settings.PASSWORDS_FILE, 'r')
             data = json.load(json_data)
             for p in data:
-                ret.append(str(p['pass']))
+                if p.strip() != '':
+                    ret.append(str(p['pass']))
             json_data.close()
             return ret
         except:
@@ -63,7 +64,10 @@ class unrarer:
     # tries to extract a rar archive using a supplied password
     def processfile(self, fn, pwd):
         ok = False
-        cmd = ['unrar', 'x', '-o-', '-p' + pwd, fn, ]
+        if pwd.strip() == '':
+            cmd = ['unrar', 'x', '-o-', 'p-', fn, ]
+        else:
+            cmd = ['unrar', 'x', '-o-', '-p' + pwd, fn, ]
         lastprogress = -1
         res = 0
         p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
