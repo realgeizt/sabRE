@@ -17,11 +17,15 @@ class unrarer:
             json_data = open(settings.PASSWORDS_FILE, 'r')
             data = json.load(json_data)
             for p in data:
-                if p.strip() != '':
-                    ret.append(str(p['pass']))
+                try:
+                    if p['pass'].strip() != '':
+                        ret.append(str(p['pass']))
+                except Exception, e:
+                    print('Exception while reading password: %s' % e)
             json_data.close()
             return ret
-        except:
+        except Exception, e:
+            print('Exception while reading passwords: %s' % e)
             return []
     # gets percentage of extraction from rar output line
     def getpercent(self, line):
